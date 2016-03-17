@@ -242,7 +242,7 @@ namespace chemstgen {
           chrono::time_point<chrono::system_clock> tp0, tp1;
           tp0 = chrono::system_clock::now();
 #pragma omp critical
-          clog << itfmkey << endl;
+          cout << itfmkey << endl;
 
           // for each new smiles
           auto inewrtxn = lmdb::txn::begin(db.inewenv(), nullptr, MDB_RDONLY);
@@ -259,7 +259,7 @@ namespace chemstgen {
           tp1 = chrono::system_clock::now();
           chrono::duration<double> elapsed_second = tp1 - tp0;
 #pragma omp critical
-          clog << '\t' << itfmkey << '\t' << elapsed_second.count() << endl;
+          cout << '\t' << itfmkey << '\t' << elapsed_second.count() << endl;
         }
       }
       itfmcsr.close();
