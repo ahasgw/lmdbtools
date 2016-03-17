@@ -1,6 +1,8 @@
 #include <config.h>
 #include <cerrno>
+#include <chrono>
 #include <cstdlib>
+#include <ctime>
 #include <iostream>
 #include <string>
 #include <unordered_set>
@@ -218,26 +220,35 @@ namespace chemstgen {
       auto itfmrtxn = lmdb::txn::begin(db.itfmenv(), nullptr, MDB_RDONLY);
       auto itfmcsr = lmdb::cursor::open(itfmrtxn, lmdb::dbi::open(itfmrtxn));
       string itfmkey, itfmval;
-      while (itfmcsr.get(itfmkey, itfmval, MDB_NEXT)) {
-        Tfm tfm;
-        if (!tfm.init(itfmkey, itfmval)) continue;
-        clog << itfmkey << endl;
-
-        // for each new smiles
-        auto inewrtxn = lmdb::txn::begin(db.inewenv(), nullptr, MDB_RDONLY);
-        auto inewcsr = lmdb::cursor::open(inewrtxn, lmdb::dbi::open(inewrtxn));
-        string inewkey, inewval;
-        Smi inew;
 #pragma omp parallel
 #pragma omp single nowait
-        while (inewcsr.get(inewkey, inewval, MDB_NEXT) && 
-            inew.init(inewkey, inewval, tfm))
-#pragma omp task firstprivate(tfm, inew), shared(db)
-        {
-          // apply transform to new smiles
-          apply_transform_to_smiles(tfm, inew, db);
+      while (itfmcsr.get(itfmkey, itfmval, MDB_NEXT))
+#pragma omp task firstprivate(itfmkey, itfmval), shared(db)
+      {
+        Tfm tfm;
+        if (tfm.init(itfmkey, itfmval)) {
+          chrono::time_point<chrono::system_clock> tp0, tp1;
+          tp0 = chrono::system_clock::now();
+#pragma omp critical
+          clog << itfmkey << endl;
+
+          // for each new smiles
+          auto inewrtxn = lmdb::txn::begin(db.inewenv(), nullptr, MDB_RDONLY);
+          auto inewcsr = lmdb::cursor::open(inewrtxn, lmdb::dbi::open(inewrtxn));
+          string inewkey, inewval;
+          while (inewcsr.get(inewkey, inewval, MDB_NEXT))
+          {
+            Smi inew;
+            if (inew.init(inewkey, inewval, tfm)) {
+              apply_transform_to_smiles(tfm, inew, db);
+            }
+          }
+          inewrtxn.abort();
+          tp1 = chrono::system_clock::now();
+          chrono::duration<double> elapsed_second = tp1 - tp0;
+#pragma omp critical
+          clog << '\t' << itfmkey << '\t' << elapsed_second.count() << endl;
         }
-        inewrtxn.abort();
       }
       itfmcsr.close();
       itfmrtxn.abort();
