@@ -2,6 +2,7 @@
 #include <cerrno>
 #include <cstdlib>
 #include <iostream>
+#include <regex>
 #include <string>
 #include <cppformat/format.h>
 #include <gflags/gflags.h>
@@ -11,6 +12,7 @@ DEFINE_bool(stat, false, "dump database statistics only");
 DEFINE_bool(key, true, "dump with hash key");
 DEFINE_uint64(mapsize, 1000000, "lmdb map size in MiB");
 DEFINE_string(separator, "\t", "field separator");
+DEFINE_string(pattern, "", "regular expression pattern");
 
 namespace {
 
@@ -33,8 +35,17 @@ namespace {
           auto cursor = lmdb::cursor::open(rtxn, dbi);
           string linefmt = (FLAGS_key ? "{0}{1}{2}\n" : "{2}\n");
           string key, value;
-          while (cursor.get(key, value, MDB_NEXT)) {
-            fmt::print(cout, linefmt, key, FLAGS_separator, value);
+          if (FLAGS_pattern.empty()) {
+            while (cursor.get(key, value, MDB_NEXT)) {
+              fmt::print(cout, linefmt, key, FLAGS_separator, value);
+            }
+          } else {
+            regex pattern(FLAGS_pattern);
+            while (cursor.get(key, value, MDB_NEXT)) {
+              if (regex_search(key, pattern)) {
+                fmt::print(cout, linefmt, key, FLAGS_separator, value);
+              }
+            }
           }
           cout << flush;
           cursor.close();
