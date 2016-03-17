@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cstdlib>
 #include <ctime>
+#include <exception>
 #include <iostream>
 #include <string>
 #include <unordered_set>
@@ -120,8 +121,9 @@ namespace chemstgen {
         RingSet<Molecule> rings(mol);
         for (vector<vector<string>>::size_type i = 0; i < dict.size(); ++i) {
           if (!auxSMIRKS.init(dict[i][idx[i]])) {
-            cerr << "error: " << auxSMIRKS.error().what() << endl;
-            continue;
+            cerr << "error: " << auxSMIRKS.error().what()
+              << '\"' << dict[i][idx[i]] << '\"' << endl;
+            throw runtime_error(dict[i][idx[i]].c_str());
           }
           auxSMIRKS.apply(mol, rings);
           // this is not effective. mol->smiles->mol
