@@ -27,6 +27,7 @@ DEFINE_uint64(irtedbmapsize,   1000, "input route lmdb mapsize in MiB");
 DEFINE_uint64(onewdbmapsize, 200000, "output new smiles lmdb mapsize in MiB");
 DEFINE_uint64(osmidbmapsize, 800000, "output smiles lmdb mapsize in MiB");
 DEFINE_uint64(ortedbmapsize,  10000, "output route lmdb mapsize in MiB");
+DEFINE_uint64(commitchunksize,  100, "maximum size of commit chunk");
 DEFINE_int32(maxapply, 1, "maximum number of applying reaction");
 
 namespace chemstgen {
@@ -178,6 +179,7 @@ namespace chemstgen {
       string prodsetstr;
 #pragma omp critical
       {
+        uint64_t cnt = 0;
         auto onewwtxn = lmdb::txn::begin(db.onewenv());
         auto onewwdbi = lmdb::dbi::open(onewwtxn);
         auto osmiwtxn = lmdb::txn::begin(db.osmienv());
@@ -194,16 +196,24 @@ namespace chemstgen {
           osmiwdbi.put(osmiwtxn, smikey.c_str(), prodcan.c_str(),
               MDB_NOOVERWRITE);
 
+          if (++cnt > FLAGS_commitchunksize) {
+            // commit and reopen transaction
+            osmiwtxn.commit();
+            osmiwtxn = lmdb::txn::begin(db.osmienv());
+            osmiwdbi = lmdb::dbi::open(osmiwtxn);
+            cnt = 0;
+          }
+
           prodsetstr += ' ' + smikey;
         }
         osmiwtxn.commit();
         onewwtxn.commit();
       }
+      string rtekey = tfm.key() + "." + inew.key();
 #pragma omp critical
       {
         auto ortewtxn = lmdb::txn::begin(db.orteenv());
         auto ortewdbi = lmdb::dbi::open(ortewtxn);
-        string rtekey = tfm.key() + "." + inew.key();
         ortewdbi.put(ortewtxn, rtekey.c_str(), prodsetstr.substr(1).c_str(),
             MDB_NOOVERWRITE);
         ortewtxn.commit();
