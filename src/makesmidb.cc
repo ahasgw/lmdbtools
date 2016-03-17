@@ -16,7 +16,7 @@ DEFINE_bool(genkey, true, "generate hash key");
 DEFINE_bool(canonicalize, true, "canonicalize smiles");
 DEFINE_bool(removecomment, true, "remove comment line beginning with '#'");
 DEFINE_bool(singlecomponentonly, false, "select single component smiles only");
-DEFINE_uint64(mapsize, 10, "lmdb map size in MiB");
+DEFINE_uint64(mapsize, 10000, "lmdb map size in MiB");
 
 namespace {
 

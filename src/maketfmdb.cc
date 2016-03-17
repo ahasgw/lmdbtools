@@ -11,7 +11,7 @@
 #include "lmdb++.h"
 
 DEFINE_bool(genkey, true, "generate hash key");
-DEFINE_uint64(mapsize, 10, "lmdb map size in MiB");
+DEFINE_uint64(mapsize, 1000, "lmdb map size in MiB");
 
 namespace {
 

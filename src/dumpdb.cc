@@ -9,7 +9,7 @@
 
 DEFINE_bool(stat, false, "dump database statistics only");
 DEFINE_bool(key, true, "dump with hash key");
-DEFINE_uint64(mapsize, 10, "lmdb map size in MiB");
+DEFINE_uint64(mapsize, 1000000, "lmdb map size in MiB");
 DEFINE_string(separator, "\t", "field separator");
 
 namespace {
