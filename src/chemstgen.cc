@@ -248,7 +248,10 @@ namespace chemstgen {
           auto inewrtxn = lmdb::txn::begin(db.inewenv(), nullptr, MDB_RDONLY);
           auto inewcsr = lmdb::cursor::open(inewrtxn, lmdb::dbi::open(inewrtxn));
           string inewkey, inewval;
+#pragma omp parallel
+#pragma omp single nowait
           while (inewcsr.get(inewkey, inewval, MDB_NEXT))
+#pragma omp task firstprivate(inewkey, inewval), shared(db)
           {
             Smi inew;
             if (inew.init(inewkey, inewval, tfm)) {
