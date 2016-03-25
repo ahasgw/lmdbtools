@@ -7,17 +7,17 @@
 #include <string>
 #include <cppformat/format.h>
 #include <gflags/gflags.h>
-#include "cryptopp_hash.h"
 #include "lmdb++.h"
+#include "chemstgen.h"
 
-DEFINE_bool(genkey, true, "generate hash key");
+DEFINE_bool(verbose, false, "verbose output");
+DEFINE_bool(genkey, true, "generate key");
 DEFINE_uint64(mapsize, 1000, "lmdb map size in MiB");
 
 namespace {
 
   int make_db(int argc, char *argv[]) {
     using namespace std;
-    using namespace chemstgen;
 
     const unsigned long max_rid = 9999;
     const unsigned long max_tid =   99;
@@ -65,11 +65,15 @@ namespace {
             fmt::MemoryWriter sout;
             sout << fmt::pad(rid, 4, '0') << fmt::pad(tid, 2, '0');
             key = sout.str();
+            continue;
           }
           if (key != "n/a" && regex_match(line, match, tfmline)) {
             string val = match[1];  // transform
-            val = regex_replace(val, spaces, "\t");
-            dbi.put(wtxn, key.c_str(), val.c_str());
+            chemstgen::Tfm tfm;
+            if (tfm.init(key, val)) {
+              val = regex_replace(val, spaces, "\t");
+              dbi.put(wtxn, key.c_str(), val.c_str());
+            }
           }
         }
       } else {
