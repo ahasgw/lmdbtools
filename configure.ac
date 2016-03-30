@@ -24,6 +24,8 @@ AC_CHECK_LIB([cryptopp], [main], [],
              [AC_MSG_ERROR([libcryptopp is required])])
 AC_CHECK_LIB([helium], [main], [],
              [AC_MSG_ERROR([libheliums is required])])
+PKG_CHECK_MODULES([eigen3], [eigen3 >= 3.0.0], [],
+                  [AC_MSG_ERROR([eigen3 is required])])
 
 # Checks for header files.
 

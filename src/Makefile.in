@@ -87,7 +87,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 bin_PROGRAMS = makesmidb$(EXEEXT) maketfmdb$(EXEEXT) dumpdb$(EXEEXT) \
-	chemstgen$(EXEEXT) chemstgen_omp$(EXEEXT)
+	smi2svg$(EXEEXT) chemstgen$(EXEEXT) chemstgen_omp$(EXEEXT)
 subdir = src
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
@@ -117,6 +117,11 @@ makesmidb_LDADD = $(LDADD)
 am_maketfmdb_OBJECTS = maketfmdb.$(OBJEXT)
 maketfmdb_OBJECTS = $(am_maketfmdb_OBJECTS)
 maketfmdb_LDADD = $(LDADD)
+am_smi2svg_OBJECTS = smi2svg-smi2svg.$(OBJEXT)
+smi2svg_OBJECTS = $(am_smi2svg_OBJECTS)
+smi2svg_LDADD = $(LDADD)
+smi2svg_LINK = $(CXXLD) $(smi2svg_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
+	$(LDFLAGS) -o $@
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -163,9 +168,11 @@ am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
 SOURCES = $(chemstgen_SOURCES) $(chemstgen_omp_SOURCES) \
-	$(dumpdb_SOURCES) $(makesmidb_SOURCES) $(maketfmdb_SOURCES)
+	$(dumpdb_SOURCES) $(makesmidb_SOURCES) $(maketfmdb_SOURCES) \
+	$(smi2svg_SOURCES)
 DIST_SOURCES = $(chemstgen_SOURCES) $(chemstgen_omp_SOURCES) \
-	$(dumpdb_SOURCES) $(makesmidb_SOURCES) $(maketfmdb_SOURCES)
+	$(dumpdb_SOURCES) $(makesmidb_SOURCES) $(maketfmdb_SOURCES) \
+	$(smi2svg_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -235,6 +242,9 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PKG_CONFIG = @PKG_CONFIG@
+PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
+PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
@@ -257,6 +267,8 @@ datadir = @datadir@
 datarootdir = @datarootdir@
 docdir = @docdir@
 dvidir = @dvidir@
+eigen3_CFLAGS = @eigen3_CFLAGS@
+eigen3_LIBS = @eigen3_LIBS@
 exec_prefix = @exec_prefix@
 host_alias = @host_alias@
 htmldir = @htmldir@
@@ -286,6 +298,8 @@ top_srcdir = @top_srcdir@
 makesmidb_SOURCES = makesmidb.cc cryptopp_hash.h lmdb++.h
 maketfmdb_SOURCES = maketfmdb.cc chemstgen.h lmdb++.h
 dumpdb_SOURCES = dumpdb.cc lmdb++.h
+smi2svg_SOURCES = smi2svg.cc cryptopp_hash.h
+smi2svg_CXXFLAGS = $(eigen3_CFLAGS) $(eigen3_LIBS)
 chemstgen_SOURCES = chemstgen.cc chemstgen.h cryptopp_hash.h lmdb++.h
 chemstgen_omp_SOURCES = chemstgen.cc chemstgen.h cryptopp_hash.h lmdb++.h
 chemstgen_omp_CXXFLAGS = -fopenmp
@@ -385,6 +399,10 @@ maketfmdb$(EXEEXT): $(maketfmdb_OBJECTS) $(maketfmdb_DEPENDENCIES) $(EXTRA_maket
 	@rm -f maketfmdb$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(maketfmdb_OBJECTS) $(maketfmdb_LDADD) $(LIBS)
 
+smi2svg$(EXEEXT): $(smi2svg_OBJECTS) $(smi2svg_DEPENDENCIES) $(EXTRA_smi2svg_DEPENDENCIES) 
+	@rm -f smi2svg$(EXEEXT)
+	$(AM_V_CXXLD)$(smi2svg_LINK) $(smi2svg_OBJECTS) $(smi2svg_LDADD) $(LIBS)
+
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 
@@ -396,6 +414,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dumpdb.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/makesmidb.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/maketfmdb.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/smi2svg-smi2svg.Po@am__quote@
 
 .cc.o:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -424,6 +443,20 @@ chemstgen_omp-chemstgen.obj: chemstgen.cc
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='chemstgen.cc' object='chemstgen_omp-chemstgen.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chemstgen_omp_CXXFLAGS) $(CXXFLAGS) -c -o chemstgen_omp-chemstgen.obj `if test -f 'chemstgen.cc'; then $(CYGPATH_W) 'chemstgen.cc'; else $(CYGPATH_W) '$(srcdir)/chemstgen.cc'; fi`
+
+smi2svg-smi2svg.o: smi2svg.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(smi2svg_CXXFLAGS) $(CXXFLAGS) -MT smi2svg-smi2svg.o -MD -MP -MF $(DEPDIR)/smi2svg-smi2svg.Tpo -c -o smi2svg-smi2svg.o `test -f 'smi2svg.cc' || echo '$(srcdir)/'`smi2svg.cc
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/smi2svg-smi2svg.Tpo $(DEPDIR)/smi2svg-smi2svg.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='smi2svg.cc' object='smi2svg-smi2svg.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(smi2svg_CXXFLAGS) $(CXXFLAGS) -c -o smi2svg-smi2svg.o `test -f 'smi2svg.cc' || echo '$(srcdir)/'`smi2svg.cc
+
+smi2svg-smi2svg.obj: smi2svg.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(smi2svg_CXXFLAGS) $(CXXFLAGS) -MT smi2svg-smi2svg.obj -MD -MP -MF $(DEPDIR)/smi2svg-smi2svg.Tpo -c -o smi2svg-smi2svg.obj `if test -f 'smi2svg.cc'; then $(CYGPATH_W) 'smi2svg.cc'; else $(CYGPATH_W) '$(srcdir)/smi2svg.cc'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/smi2svg-smi2svg.Tpo $(DEPDIR)/smi2svg-smi2svg.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='smi2svg.cc' object='smi2svg-smi2svg.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(smi2svg_CXXFLAGS) $(CXXFLAGS) -c -o smi2svg-smi2svg.obj `if test -f 'smi2svg.cc'; then $(CYGPATH_W) 'smi2svg.cc'; else $(CYGPATH_W) '$(srcdir)/smi2svg.cc'; fi`
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique

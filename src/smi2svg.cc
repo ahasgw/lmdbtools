@@ -3,25 +3,26 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
-
+#include <regex>
 #include <sstream>
-
 #include <string>
 #include <Helium/chemist/molecule.h>
 #include <Helium/chemist/smiles.h>
 #include <Helium/chemist/depict.h>
+#include <cppformat/format.h>
 #include <gflags/gflags.h>
 #include "cryptopp_hash.h"
 
-DEFINE_bool(name, "smiles", "filename (smiles/key/genkey)";
+DEFINE_bool(verbose, false, "verbose output");
+DEFINE_bool(genkey, false, "use generated key as file name (replacing slash by -)");
 
 namespace {
-  
-  void writeSVG(const std::string &smi, const Helium::Chemist::Molecule &mol) {
+
+  void writeSVG(const std::string &name, const Helium::Chemist::Molecule &mol) {
     using namespace std;
     using namespace Helium::Chemist;
 
-    string path = smi + ".svg";
+    string path = name + ".svg";
     ofstream ofs(path);
     if (ofs) {
       auto coords = generate_diagram(mol);
@@ -37,19 +38,25 @@ namespace {
 
   void draw_molecule_svg(const std::string &fname) {
     using namespace std;
+    using namespace chemstgen;
     using namespace Helium::Chemist;
 
+    regex slash(R"(/)");
     ifstream ifs((fname == "-") ? "/dev/stdin" : fname);
-    for (string line; getline(ifs, line);) {
-      string smi;
-      istringstream iss(line);
-      iss >> smi;
+    for (string smi; ifs >> smi;) {
       Molecule mol;
       Smiles SMILES;
       if (!SMILES.read(smi, mol)) {
-        cerr << SMILES.error().what() << flush;
+        if (FLAGS_verbose) {
+          cerr << SMILES.error().what() << flush;
+        }
       } else {
-        writeSVG(smi, mol);
+        string name = smi;
+        if (FLAGS_genkey) {
+          name = cryptopp_hash<CryptoPP::SHA256,CryptoPP::Base64Encoder>(smi);
+          name = regex_replace(name, slash, R"(-)");
+        }
+        writeSVG(name, mol);
       }
     }
   }
