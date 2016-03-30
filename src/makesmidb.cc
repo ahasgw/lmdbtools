@@ -12,6 +12,7 @@
 #include "cryptopp_hash.h"
 #include "lmdb++.h"
 
+DEFINE_bool(verbose, false, "verbose output");
 DEFINE_bool(genkey, true, "generate hash key");
 DEFINE_bool(canonicalize, true, "canonicalize smiles");
 DEFINE_bool(removecomment, true, "remove comment line beginning with '#'");
@@ -19,6 +20,20 @@ DEFINE_bool(singlecomponentonly, false, "select single component smiles only");
 DEFINE_uint64(mapsize, 10000, "lmdb map size in MiB");
 
 namespace {
+
+  inline void check_duplicates(lmdb::dbi &dbi, lmdb::txn &txn,
+      const std::string &key, const std::string &val) {
+    using namespace std;
+
+    cerr << "duplicate key: " << key;
+    lmdb::val keyval(key);
+    lmdb::val oldval;
+    dbi.get(txn, keyval, oldval);
+    if (val != oldval.data()) {
+      cerr << " collision: '" << oldval.data() << "' and '" << val << "'";
+    }
+    cerr << endl;
+  }
 
   int make_db(int argc, char *argv[]) {
     using namespace std;
@@ -59,7 +74,11 @@ namespace {
             }
             string key =
               cryptopp_hash<CryptoPP::SHA256,CryptoPP::Base64Encoder>(val);
-            dbi.put(wtxn, key.c_str(), val.c_str());
+            if (!dbi.put(wtxn, key.c_str(), val.c_str(), MDB_NOOVERWRITE)) {
+              if (FLAGS_verbose) {
+                check_duplicates(dbi, wtxn, key, val);
+              }
+            }
           }
         }
       } else {
@@ -69,7 +88,11 @@ namespace {
           if (regex_match(line, match, pattern)) {
             const string &key = match[1];  // hash
             const string &val = match[2];  // smi
-            dbi.put(wtxn, key.c_str(), val.c_str());
+            if (!dbi.put(wtxn, key.c_str(), val.c_str(), MDB_NOOVERWRITE)) {
+              if (FLAGS_verbose) {
+                check_duplicates(dbi, wtxn, key, val);
+              }
+            }
           }
         }
       }

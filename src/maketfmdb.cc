@@ -16,6 +16,20 @@ DEFINE_uint64(mapsize, 1000, "lmdb map size in MiB");
 
 namespace {
 
+  inline void check_duplicates(lmdb::dbi &dbi, lmdb::txn &txn,
+      const std::string &key, const std::string &val) {
+    using namespace std;
+
+    cerr << "duplicate key: " << key;
+    lmdb::val keyval(key);
+    lmdb::val oldval;
+    dbi.get(txn, keyval, oldval);
+    if (val != oldval.data()) {
+      cerr << " collision: '" << oldval.data() << "' and '" << val << "'";
+    }
+    cerr << endl;
+  }
+
   int make_db(int argc, char *argv[]) {
     using namespace std;
 
@@ -72,7 +86,11 @@ namespace {
             chemstgen::Tfm tfm;
             if (tfm.init(key, val)) {
               val = regex_replace(val, spaces, "\t");
-              dbi.put(wtxn, key.c_str(), val.c_str());
+              if (!dbi.put(wtxn, key.c_str(), val.c_str(), MDB_NOOVERWRITE)) {
+                if (FLAGS_verbose) {
+                  check_duplicates(dbi, wtxn, key, val);
+                }
+              }
             }
           }
         }
@@ -86,7 +104,11 @@ namespace {
           if (regex_match(line, match, tfmline)) {
             const string &key = match[1];  // hash
             const string &val = match[2];  // transform
-            dbi.put(wtxn, key.c_str(), val.c_str());
+            if (!dbi.put(wtxn, key.c_str(), val.c_str(), MDB_NOOVERWRITE)) {
+              if (FLAGS_verbose) {
+                check_duplicates(dbi, wtxn, key, val);
+              }
+            }
           }
         }
       }
