@@ -8,10 +8,13 @@ AC_CONFIG_HEADERS([config.h])
 AM_INIT_AUTOMAKE
 
 # Checks for programs.
+AC_LANG_PUSH([C++])
 AC_PROG_CXX
 AX_CXX_COMPILE_STDCXX_11(ext, mandatory)
-AC_PROG_CC_C99
 AC_OPENMP
+AC_SUBST(AM_CXXFLAGS, "$OPENMP_CXXFLAGS")
+AC_LANG_POP([C++])
+AC_PROG_CC_C99
 
 # Checks for libraries.
 AC_CHECK_LIB([gflags], [main], [],

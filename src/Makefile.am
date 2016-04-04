@@ -1,4 +1,4 @@
-bin_PROGRAMS = makesmidb maketfmdb dumpdb smi2svg chemstgen chemstgen_omp
+bin_PROGRAMS = makesmidb maketfmdb dumpdb smi2svg chemstgen
 
 makesmidb_SOURCES = makesmidb.cc chemstgen.h cryptopp_hash.h lmdb++.h
 
@@ -10,6 +10,3 @@ smi2svg_SOURCES = smi2svg.cc cryptopp_hash.h
 smi2svg_CXXFLAGS = $(eigen3_CFLAGS) $(eigen3_LIBS)
 
 chemstgen_SOURCES = chemstgen.cc chemstgen.h cryptopp_hash.h lmdb++.h
-
-chemstgen_omp_SOURCES = chemstgen.cc chemstgen.h cryptopp_hash.h lmdb++.h
-chemstgen_omp_CXXFLAGS = -fopenmp
