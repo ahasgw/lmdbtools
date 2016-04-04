@@ -12,6 +12,7 @@
 
 DEFINE_bool(verbose, false, "verbose output");
 DEFINE_bool(genkey, true, "generate key");
+DEFINE_bool(overwrite, false, "overwrite new value for a duplicate key");
 DEFINE_uint64(mapsize, 1000, "lmdb map size in MiB");
 
 namespace {
@@ -22,6 +23,7 @@ namespace {
 
     const unsigned long max_rid = 9999;
     const unsigned long max_tid =   99;
+    const unsigned int put_flags = (FLAGS_overwrite ? 0 : MDB_NOOVERWRITE);
 
     try {
       auto env = lmdb::env::create();
@@ -73,7 +75,7 @@ namespace {
             Tfm tfm;
             if (tfm.init(key, val)) {
               val = regex_replace(val, spaces, "\t");
-              if (!dbi.put(wtxn, key.c_str(), val.c_str(), MDB_NOOVERWRITE)) {
+              if (!dbi.put(wtxn, key.c_str(), val.c_str(), put_flags)) {
                 if (FLAGS_verbose) {
                   check_duplicates(dbi, wtxn, key, val);
                 }
@@ -91,7 +93,7 @@ namespace {
           if (regex_match(line, match, tfmline)) {
             const string &key = match[1];  // hash
             const string &val = match[2];  // transform
-            if (!dbi.put(wtxn, key.c_str(), val.c_str(), MDB_NOOVERWRITE)) {
+            if (!dbi.put(wtxn, key.c_str(), val.c_str(), put_flags)) {
               if (FLAGS_verbose) {
                 check_duplicates(dbi, wtxn, key, val);
               }

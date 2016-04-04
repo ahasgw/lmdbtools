@@ -20,7 +20,7 @@
 #include "chemstgen.h"
 
 DEFINE_bool(verbose, false, "verbose output");
-//DEFINE_uint64(dbmapsize,         10, "default lmdb mapsize in MiB");
+DEFINE_bool(overwrite, false, "overwrite new value for a duplicate key");
 DEFINE_uint64(itfmdbmapsize,     10, "transform lmdb mapsize in MiB");
 DEFINE_uint64(inewdbmapsize,  10000, "input new smiles lmdb mapsize in MiB");
 DEFINE_uint64(ismidbmapsize, 200000, "input having smiles lmdb mapsize in MiB");
@@ -178,6 +178,7 @@ namespace chemstgen {
         for (const auto &prodcan: prodset)
           cout << '\t' << prodcan << endl;
       }
+      const unsigned int put_flags = (FLAGS_overwrite ? 0 : MDB_NOOVERWRITE);
       string prodsetstr;
 #pragma omp critical
       {
@@ -187,16 +188,14 @@ namespace chemstgen {
         auto osmiwtxn = lmdb::txn::begin(db.osmienv());
         auto osmiwdbi = lmdb::dbi::open(osmiwtxn);
         osmiwdbi.put(osmiwtxn, inew.key().c_str(), inew.smiles().c_str(),
-            MDB_NOOVERWRITE);
+            put_flags);
         for (const auto &prodcan: prodset) {
           string smikey =
             cryptopp_hash<CryptoPP::SHA256,CryptoPP::Base64Encoder>(prodcan);
           if (!osmiwdbi.get(osmiwtxn, smikey.c_str())) {
-            onewwdbi.put(onewwtxn, smikey.c_str(), prodcan.c_str(),
-                MDB_NOOVERWRITE);
+            onewwdbi.put(onewwtxn, smikey.c_str(), prodcan.c_str(), put_flags);
           }
-          osmiwdbi.put(osmiwtxn, smikey.c_str(), prodcan.c_str(),
-              MDB_NOOVERWRITE);
+          osmiwdbi.put(osmiwtxn, smikey.c_str(), prodcan.c_str(), put_flags);
 
           if (++cnt > FLAGS_commitchunksize) {
             // commit and reopen transaction
@@ -217,7 +216,7 @@ namespace chemstgen {
         auto ortewtxn = lmdb::txn::begin(db.orteenv());
         auto ortewdbi = lmdb::dbi::open(ortewtxn);
         ortewdbi.put(ortewtxn, rtekey.c_str(), prodsetstr.substr(1).c_str(),
-            MDB_NOOVERWRITE);
+            put_flags);
         ortewtxn.commit();
       }
     }

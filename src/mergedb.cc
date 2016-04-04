@@ -10,6 +10,7 @@
 #include "chemstgen.h"
 
 DEFINE_bool(verbose, false, "verbose output");
+DEFINE_bool(overwrite, false, "overwrite new value for a duplicate key");
 DEFINE_uint64(mapsize, 1000000, "lmdb map size in MiB");
 DEFINE_string(pattern, "", "regular expression pattern");
 
@@ -18,6 +19,8 @@ namespace {
   int merge_db(int argc, char *argv[]) {
     using namespace std;
     using namespace chemstgen;
+
+    const unsigned int put_flags = (FLAGS_overwrite ? 0 : MDB_NOOVERWRITE);
 
     try {
       auto env0 = lmdb::env::create();
@@ -39,7 +42,7 @@ namespace {
         string key, val;
         if (FLAGS_pattern.empty()) {
           while (cursor.get(key, val, MDB_NEXT)) {
-            if (!dbi0.put(wtxn0, key.c_str(), val.c_str(), MDB_NOOVERWRITE)) {
+            if (!dbi0.put(wtxn0, key.c_str(), val.c_str(), put_flags)) {
               if (FLAGS_verbose) {
                 check_duplicates(dbi0, wtxn0, key, val);
               }
@@ -49,7 +52,7 @@ namespace {
           regex pattern(FLAGS_pattern);
           while (cursor.get(key, val, MDB_NEXT)) {
             if (regex_search(key, pattern)) {
-              if (!dbi0.put(wtxn0, key.c_str(), val.c_str(), MDB_NOOVERWRITE)) {
+              if (!dbi0.put(wtxn0, key.c_str(), val.c_str(), put_flags)) {
                 if (FLAGS_verbose) {
                   check_duplicates(dbi0, wtxn0, key, val);
                 }

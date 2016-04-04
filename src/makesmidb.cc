@@ -18,6 +18,7 @@ DEFINE_bool(genkey, true, "generate hash key");
 DEFINE_bool(canonicalize, true, "canonicalize smiles");
 DEFINE_bool(removecomment, true, "remove comment line beginning with '#'");
 DEFINE_bool(singlecomponentonly, false, "select single component smiles only");
+DEFINE_bool(overwrite, false, "overwrite new value for a duplicate key");
 DEFINE_uint64(mapsize, 10000, "lmdb map size in MiB");
 
 namespace {
@@ -26,6 +27,8 @@ namespace {
     using namespace std;
     using namespace chemstgen;
     using namespace Helium::Chemist;
+
+    const unsigned int put_flags = (FLAGS_overwrite ? 0 : MDB_NOOVERWRITE);
 
     try {
       auto env = lmdb::env::create();
@@ -61,7 +64,7 @@ namespace {
             }
             string key =
               cryptopp_hash<CryptoPP::SHA256,CryptoPP::Base64Encoder>(val);
-            if (!dbi.put(wtxn, key.c_str(), val.c_str(), MDB_NOOVERWRITE)) {
+            if (!dbi.put(wtxn, key.c_str(), val.c_str(), put_flags)) {
               if (FLAGS_verbose) {
                 check_duplicates(dbi, wtxn, key, val);
               }
@@ -75,7 +78,7 @@ namespace {
           if (regex_match(line, match, pattern)) {
             const string &key = match[1];  // hash
             const string &val = match[2];  // smi
-            if (!dbi.put(wtxn, key.c_str(), val.c_str(), MDB_NOOVERWRITE)) {
+            if (!dbi.put(wtxn, key.c_str(), val.c_str(), put_flags)) {
               if (FLAGS_verbose) {
                 check_duplicates(dbi, wtxn, key, val);
               }
