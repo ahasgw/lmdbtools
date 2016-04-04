@@ -8,6 +8,7 @@
 #include <Helium/chemist/smiles.h>
 #include <Helium/chemist/smirks.h>
 #include <gflags/gflags.h>
+#include "lmdb++.h"
 
 DECLARE_bool(verbose);
 
@@ -108,5 +109,18 @@ namespace chemstgen {
       std::string smiles_;
       Helium::Chemist::Molecule mol_;
   };
+
+  inline void check_duplicates(lmdb::dbi &dbi, lmdb::txn &txn,
+      const std::string &key, const std::string &val) {
+    using namespace std;
+    cerr << "duplicate key: " << key;
+    lmdb::val keyval(key);
+    lmdb::val oldval;
+    dbi.get(txn, keyval, oldval);
+    if (val != string(oldval.data(), oldval.size())) {
+      cerr << " collision: '" << oldval.data() << "' and '" << val << "'";
+    }
+    cerr << endl;
+  }
 
 }  // namespace chemstgen

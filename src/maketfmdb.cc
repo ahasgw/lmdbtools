@@ -16,22 +16,9 @@ DEFINE_uint64(mapsize, 1000, "lmdb map size in MiB");
 
 namespace {
 
-  inline void check_duplicates(lmdb::dbi &dbi, lmdb::txn &txn,
-      const std::string &key, const std::string &val) {
-    using namespace std;
-
-    cerr << "duplicate key: " << key;
-    lmdb::val keyval(key);
-    lmdb::val oldval;
-    dbi.get(txn, keyval, oldval);
-    if (val != oldval.data()) {
-      cerr << " collision: '" << oldval.data() << "' and '" << val << "'";
-    }
-    cerr << endl;
-  }
-
   int make_db(int argc, char *argv[]) {
     using namespace std;
+    using namespace chemstgen;
 
     const unsigned long max_rid = 9999;
     const unsigned long max_tid =   99;
@@ -83,7 +70,7 @@ namespace {
           }
           if (key != "n/a" && regex_match(line, match, tfmline)) {
             string val = match[1];  // transform
-            chemstgen::Tfm tfm;
+            Tfm tfm;
             if (tfm.init(key, val)) {
               val = regex_replace(val, spaces, "\t");
               if (!dbi.put(wtxn, key.c_str(), val.c_str(), MDB_NOOVERWRITE)) {
