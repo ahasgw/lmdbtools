@@ -155,9 +155,9 @@ namespace chemstgen {
     unordered_set<string> prodset;
     {
       if (tfm.smirks().requiresExplicitHydrogens())
-        make_hydrogens_explicit(inew.mol());
+        make_hydrogens_explicit(inew.multi_mol());
       int maxapply = FLAGS_maxapply;
-      auto products = tfm.smirks().react(inew.mol(), 1, maxapply);
+      auto products = tfm.smirks().react(inew.multi_mol(), 1, maxapply);
       // make unique set
       Smiles SMILES;
       prodset.clear();

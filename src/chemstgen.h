@@ -21,7 +21,9 @@ namespace chemstgen {
       bool init(const std::string &key, const std::string &val) {
         using namespace std;
         key_ = key;
-        //tfm_ = val;
+#ifdef DEBUG
+        tfm_ = val;
+#endif // DEBUG
         string smirks, smirks_aux;
         istringstream iss(val);
         if (!(iss >> multiply_ >> smirks)) {
@@ -50,12 +52,16 @@ namespace chemstgen {
       const std::vector<std::vector<std::string>> replacedict() const {
         return replacedict_;
       }
-      //const std::string &tfm() const { return tfm_; }
+#ifdef DEBUG
+      const std::string &tfm() const { return tfm_; }
+#endif // DEBUG
       const std::string &key() const { return key_; }
 
     private:
       std::string key_;
-      //std::string tfm_;
+#ifdef DEBUG
+      std::string tfm_;
+#endif // DEBUG
       std::vector<std::vector<std::string>> replacedict_;
       Helium::Chemist::Smirks smirks_;
       size_t multiply_;
@@ -84,14 +90,16 @@ namespace chemstgen {
         using namespace std;
         key_ = key;
         smiles_ = val;
+
+        string multi_smiles_ = smiles_;
         if (tfm.multiply() > 1) {
-          string tail("." + val);
+          string tail("." + smiles_);
           for (size_t i = 1; i < tfm.multiply(); ++i) {
-            smiles_.append(tail);
+            multi_smiles_.append(tail);
           }
         }
         Helium::Chemist::Smiles SMILES;
-        if (!SMILES.read(smiles_, mol_)) {
+        if (!SMILES.read(multi_smiles_, multi_mol_)) {
           if (FLAGS_verbose) {
             cerr << "error: cannot read smiles: " << key << endl;
           }
@@ -100,14 +108,14 @@ namespace chemstgen {
         return true;
       }
 
-      Helium::Chemist::Molecule &mol() { return mol_; }
+      Helium::Chemist::Molecule &multi_mol() { return multi_mol_; }
       const std::string &smiles() const { return smiles_; }
       const std::string &key() const { return key_; }
 
     private:
       std::string key_;
       std::string smiles_;
-      Helium::Chemist::Molecule mol_;
+      Helium::Chemist::Molecule multi_mol_;
   };
 
   inline void check_duplicates(lmdb::dbi &dbi, lmdb::txn &txn,
