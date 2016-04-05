@@ -37,7 +37,7 @@ namespace chemstgen {
           return false;
         }
         for (string rep; iss >> rep;) {
-          regex LR(R"(^(\S+>>)(\S+)$)");
+          const regex LR(R"(^(\S+>>)(\S+)$)");
           smatch LRmatch;
           regex_match(rep, LRmatch, LR);
           replacedict_.emplace_back(pfxsplit(LRmatch[1], LRmatch[2], "||"));

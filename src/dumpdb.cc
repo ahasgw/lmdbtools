@@ -40,7 +40,7 @@ namespace {
               fmt::print(cout, linefmt, key, FLAGS_separator, value);
             }
           } else {
-            regex pattern(FLAGS_pattern);
+            const regex pattern(FLAGS_pattern);
             while (cursor.get(key, value, MDB_NEXT)) {
               if (regex_search(key, pattern)) {
                 fmt::print(cout, linefmt, key, FLAGS_separator, value);

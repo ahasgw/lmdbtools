@@ -35,14 +35,14 @@ namespace {
 
       size_t nline = 0;
       smatch match;
-      regex spaces(R"(\s+)");
+      const regex spaces(R"(\s+)");
       // % reactid tfmid[ comm]
-      regex idline(R"(^%\s*([0-9]+)\s*([0-9]+)(\s+.+)?)");
+      const regex idline(R"(^%\s*([0-9]+)\s*([0-9]+)(\s+.+)?)");
 
       ifstream ifs((string(argv[2]) == "-") ? "/dev/stdin" : argv[2]);
       if (FLAGS_genkey) {
         // mul smr[ dict ...]
-        regex tfmline(R"(^([,0-9]+\s+\S+(\s+.+)?)\s*$)");
+        const regex tfmline(R"(^([,0-9]+\s+\S+(\s+.+)?)\s*$)");
         string key = "n/a";
         for (string line; getline(ifs, line);) {
           ++nline;
@@ -85,7 +85,7 @@ namespace {
         }
       } else {
         // key mul smr[ dict ...]
-        regex tfmline(R"(^(\S+)\s+([\d,]+\s+\S+(\s+.+)?)\s*$)");
+        const regex tfmline(R"(^(\S+)\s+([\d,]+\s+\S+(\s+.+)?)\s*$)");
         for (string line; getline(ifs, line);) {
           ++nline;
           if (line.empty() || line[0] == '#')     // skip empty or comment line

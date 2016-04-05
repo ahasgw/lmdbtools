@@ -49,7 +49,7 @@ namespace {
             }
           }
         } else {
-          regex pattern(FLAGS_pattern);
+          const regex pattern(FLAGS_pattern);
           while (cursor.get(key, val, MDB_NEXT)) {
             if (regex_search(key, pattern)) {
               if (!dbi0.put(wtxn0, key.c_str(), val.c_str(), put_flags)) {

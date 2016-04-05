@@ -44,7 +44,7 @@ namespace {
         Molecule mol;
         Smiles SMILES;
         // smi[ comm]
-        regex pattern(FLAGS_removecomment
+        const regex pattern(FLAGS_removecomment
             ? R"(^([^#]\S*|)(\s+(.*?)\s*)?$)"
             : R"(^(\S*)(\s+(.*?)\s*)?$)"
             );
@@ -73,7 +73,7 @@ namespace {
         }
       } else {
         // key smi[ comm]
-        regex pattern(R"(^(\S+)\s(\S*)(\s+(.*?)\s*)?$)");
+        const regex pattern(R"(^(\S+)\s(\S*)(\s+(.*?)\s*)?$)");
         for (string line; getline(ifs, line);) {
           if (regex_match(line, match, pattern)) {
             const string &key = match[1];  // hash

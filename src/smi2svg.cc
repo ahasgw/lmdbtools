@@ -41,7 +41,7 @@ namespace {
     using namespace chemstgen;
     using namespace Helium::Chemist;
 
-    regex slash(R"(/)");
+    const regex slash(R"(/)");
     ifstream ifs((fname == "-") ? "/dev/stdin" : fname);
     for (string smi; ifs >> smi;) {
       Molecule mol;
