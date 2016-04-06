@@ -210,7 +210,7 @@ namespace chemstgen {
         osmiwtxn.commit();
         onewwtxn.commit();
       }
-      string rtekey = inew.key() + "." + tfm.key();
+      string rtekey = inew.key() + '.' + tfm.key();
 #pragma omp critical
       {
         auto ortewtxn = lmdb::txn::begin(db.orteenv());

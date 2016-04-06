@@ -14,7 +14,7 @@
 #include "cryptopp_hash.h"
 
 DEFINE_bool(verbose, false, "verbose output");
-DEFINE_bool(genkey, false, "use generated key as file name (replacing slash by -)");
+DEFINE_bool(genkey, false, "use generated key as the file name (replacing '/' by '-')");
 
 namespace {
 
@@ -64,7 +64,7 @@ namespace {
 }  // namespace
 
 int main(int argc, char *argv[]) {
-  std::string usage = fmt::format("usage: {} [-]|[<smilesfile> ...]", argv[0]);
+  std::string usage = fmt::format("usage: {} <smilesfile> ...", argv[0]);
   gflags::SetUsageMessage(usage);
   gflags::SetVersionString(PACKAGE_VERSION);
   gflags::ParseCommandLineFlags(&argc, &argv, true);
