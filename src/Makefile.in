@@ -88,7 +88,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 bin_PROGRAMS = dumpdb$(EXEEXT) makesmidb$(EXEEXT) maketfmdb$(EXEEXT) \
 	mergedb$(EXEEXT) subtrdb$(EXEEXT) smi2svg$(EXEEXT) \
-	chemstgen$(EXEEXT)
+	chemstgen_dd$(EXEEXT) chemstgen_df$(EXEEXT) \
+	chemstgen_ff$(EXEEXT)
 subdir = src
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
@@ -101,9 +102,15 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
-am_chemstgen_OBJECTS = chemstgen.$(OBJEXT)
-chemstgen_OBJECTS = $(am_chemstgen_OBJECTS)
-chemstgen_LDADD = $(LDADD)
+am_chemstgen_dd_OBJECTS = chemstgen_dd.$(OBJEXT)
+chemstgen_dd_OBJECTS = $(am_chemstgen_dd_OBJECTS)
+chemstgen_dd_LDADD = $(LDADD)
+am_chemstgen_df_OBJECTS = chemstgen_df.$(OBJEXT)
+chemstgen_df_OBJECTS = $(am_chemstgen_df_OBJECTS)
+chemstgen_df_LDADD = $(LDADD)
+am_chemstgen_ff_OBJECTS = chemstgen_ff.$(OBJEXT)
+chemstgen_ff_OBJECTS = $(am_chemstgen_ff_OBJECTS)
+chemstgen_ff_LDADD = $(LDADD)
 am_dumpdb_OBJECTS = dumpdb.$(OBJEXT)
 dumpdb_OBJECTS = $(am_dumpdb_OBJECTS)
 dumpdb_LDADD = $(LDADD)
@@ -169,12 +176,14 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(chemstgen_SOURCES) $(dumpdb_SOURCES) $(makesmidb_SOURCES) \
+SOURCES = $(chemstgen_dd_SOURCES) $(chemstgen_df_SOURCES) \
+	$(chemstgen_ff_SOURCES) $(dumpdb_SOURCES) $(makesmidb_SOURCES) \
 	$(maketfmdb_SOURCES) $(mergedb_SOURCES) $(smi2svg_SOURCES) \
 	$(subtrdb_SOURCES)
-DIST_SOURCES = $(chemstgen_SOURCES) $(dumpdb_SOURCES) \
-	$(makesmidb_SOURCES) $(maketfmdb_SOURCES) $(mergedb_SOURCES) \
-	$(smi2svg_SOURCES) $(subtrdb_SOURCES)
+DIST_SOURCES = $(chemstgen_dd_SOURCES) $(chemstgen_df_SOURCES) \
+	$(chemstgen_ff_SOURCES) $(dumpdb_SOURCES) $(makesmidb_SOURCES) \
+	$(maketfmdb_SOURCES) $(mergedb_SOURCES) $(smi2svg_SOURCES) \
+	$(subtrdb_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -305,7 +314,9 @@ mergedb_SOURCES = mergedb.cc chemstgen.h lmdb++.h
 subtrdb_SOURCES = subtrdb.cc lmdb++.h
 smi2svg_SOURCES = smi2svg.cc cryptopp_hash.h
 smi2svg_CXXFLAGS = $(eigen3_CFLAGS) $(eigen3_LIBS)
-chemstgen_SOURCES = chemstgen.cc chemstgen.h cryptopp_hash.h lmdb++.h
+chemstgen_dd_SOURCES = chemstgen_dd.cc chemstgen.h cryptopp_hash.h lmdb++.h
+chemstgen_df_SOURCES = chemstgen_df.cc chemstgen.h cryptopp_hash.h lmdb++.h
+chemstgen_ff_SOURCES = chemstgen_ff.cc chemstgen.h cryptopp_hash.h
 all: all-am
 
 .SUFFIXES:
@@ -382,9 +393,17 @@ uninstall-binPROGRAMS:
 clean-binPROGRAMS:
 	-test -z "$(bin_PROGRAMS)" || rm -f $(bin_PROGRAMS)
 
-chemstgen$(EXEEXT): $(chemstgen_OBJECTS) $(chemstgen_DEPENDENCIES) $(EXTRA_chemstgen_DEPENDENCIES) 
-	@rm -f chemstgen$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(chemstgen_OBJECTS) $(chemstgen_LDADD) $(LIBS)
+chemstgen_dd$(EXEEXT): $(chemstgen_dd_OBJECTS) $(chemstgen_dd_DEPENDENCIES) $(EXTRA_chemstgen_dd_DEPENDENCIES) 
+	@rm -f chemstgen_dd$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(chemstgen_dd_OBJECTS) $(chemstgen_dd_LDADD) $(LIBS)
+
+chemstgen_df$(EXEEXT): $(chemstgen_df_OBJECTS) $(chemstgen_df_DEPENDENCIES) $(EXTRA_chemstgen_df_DEPENDENCIES) 
+	@rm -f chemstgen_df$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(chemstgen_df_OBJECTS) $(chemstgen_df_LDADD) $(LIBS)
+
+chemstgen_ff$(EXEEXT): $(chemstgen_ff_OBJECTS) $(chemstgen_ff_DEPENDENCIES) $(EXTRA_chemstgen_ff_DEPENDENCIES) 
+	@rm -f chemstgen_ff$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(chemstgen_ff_OBJECTS) $(chemstgen_ff_LDADD) $(LIBS)
 
 dumpdb$(EXEEXT): $(dumpdb_OBJECTS) $(dumpdb_DEPENDENCIES) $(EXTRA_dumpdb_DEPENDENCIES) 
 	@rm -f dumpdb$(EXEEXT)
@@ -416,7 +435,9 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chemstgen.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chemstgen_dd.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chemstgen_df.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chemstgen_ff.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dumpdb.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/makesmidb.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/maketfmdb.Po@am__quote@
