@@ -168,7 +168,7 @@ namespace chemstgen {
     // open environments
     Db db(argc, argv);
 
-    const regex tfmline(R"(^(\S+)\s+([\d,]+\s+\S+(\s+.+)?)\s*$)");
+    const regex tfmline(R"(^(\S+)\s+(\d+\s+\S+(\s+\S.*?)?)\s*$)");
     const regex smiline(R"(^(\S+)\s(\S*)(\+(.*?)\s*)?$)");
 
     // for each transform
