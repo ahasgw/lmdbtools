@@ -101,6 +101,7 @@ namespace chemstgen {
         Helium::Chemist::Smiles SMILES;
         if (!SMILES.read(multi_smiles_, multi_mol_)) {
           if (FLAGS_verbose) {
+#pragma omp critical
             cerr << "error: cannot read smiles: " << key << endl;
           }
           return false;
@@ -121,14 +122,15 @@ namespace chemstgen {
   inline void check_duplicates(lmdb::dbi &dbi, lmdb::txn &txn,
       const std::string &key, const std::string &val) {
     using namespace std;
-    cerr << "duplicate key: " << key;
+    string msg = "duplicate key: " + key;
     lmdb::val keyval(key);
     lmdb::val oldval;
     dbi.get(txn, keyval, oldval);
     if (val != string(oldval.data(), oldval.size())) {
-      cerr << " collision: '" << oldval.data() << "' and '" << val << "'";
+      msg += " collision: '" + string(oldval.data()) + "' and '" + val +  "'";
     }
-    cerr << endl;
+#pragma omp critical
+    cerr << msg << endl;
   }
 
 }  // namespace chemstgen

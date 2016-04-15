@@ -37,7 +37,7 @@ namespace chemstgen {
   using namespace Helium::Chemist;
 
   const int keep_mark = 999;
-  const regex Xx(R"((Xx))");
+  const regex Xx(R"(Xx)");
 
   class Db {
     public:
@@ -141,8 +141,7 @@ namespace chemstgen {
         make_hydrogens_implicit(mol);
         reset_implicit_hydrogens(mol);
         string output = SMILES.writeCanonical(mol);
-        if (set.count(output) == 0)
-          set.emplace(output);
+        set.emplace(output);
         // end condition
         if (idx[0] >= dict[0].size())
           break;
@@ -166,7 +165,11 @@ namespace chemstgen {
         pick_marked_component(*product, prod);
         make_hydrogens_implicit(prod);
         reset_implicit_hydrogens(prod);
-        prodset.emplace(regex_replace(SMILES.writeCanonical(prod), Xx, R"(*)"));
+        string smi = SMILES.writeCanonical(prod);
+        if (!smi.empty()) {
+          smi = regex_replace(smi, Xx, R"(*)");
+          prodset.emplace(smi);
+        }
       }
     }
 
