@@ -90,27 +90,38 @@ namespace chemstgen {
     make_substructure(submol, mol, atoms, bonds);
   }
 
-  void apply_replacedict(unordered_set<string> &prodset,
+  void apply_replacedict(unordered_map<string, string> &prodset,
       const vector<vector<string>> &dict) {
-    unordered_set<string> set;
+    unordered_map<string, string> set;
     Smiles SMILES;
+    Smirks auxSMIRKS;
+    Molecule mol;
     for (const auto &prodcan: prodset) {
       vector<vector<string>::size_type> idx(dict.size(), 0);
       for (;;) {
-        Molecule mol;
-        SMILES.read(prodcan, mol);
-        Smirks auxSMIRKS;
-        RingSet<Molecule> rings(mol);
-        for (vector<vector<string>>::size_type i = 0; i < dict.size(); ++i) {
-          if (!auxSMIRKS.init(dict[i][idx[i]])) {
-            cerr << "error: " << auxSMIRKS.error().what()
-              << '\"' << dict[i][idx[i]] << '\"' << endl;
-            throw runtime_error(dict[i][idx[i]].c_str());
+        if (!SMILES.read(prodcan.second, mol)) {
+          if (FLAGS_verbose) {
+#pragma omp critical
+            cerr << "error: cannot read smiles: " << prodcan.second << endl;
           }
-          auxSMIRKS.apply(mol, rings);
+          break;
+        }
+        for (vector<vector<string>>::size_type i = 0; i < dict.size(); ++i) {
+          auxSMIRKS.init(dict[i][idx[i]]);
+          if (auxSMIRKS.requiresExplicitHydrogens()) {
+            make_hydrogens_explicit(mol);
+          }
+          auxSMIRKS.apply(mol);
           // this is not effective. mol->smiles->mol
           SMILES.read(regex_replace(SMILES.write(mol), Xx, R"(*)"), mol);
         }
+        // make unique set
+        make_hydrogens_implicit(mol);
+        reset_implicit_hydrogens(mol);
+        string output = SMILES.writeCanonical(mol);
+        string outputkey =
+          cryptopp_hash<CryptoPP::SHA256,CryptoPP::Base64Encoder>(output);
+        set.emplace(outputkey, output);
         // update indeces
         ++idx[dict.size() - 1];
         for (int j = dict.size() - 1; j > 0; --j) {
@@ -119,11 +130,6 @@ namespace chemstgen {
             ++idx[j - 1];
           }
         }
-        // make unique set
-        make_hydrogens_implicit(mol);
-        reset_implicit_hydrogens(mol);
-        string output = SMILES.writeCanonical(mol);
-        set.emplace(output);
         // end condition
         if (idx[0] >= dict[0].size())
           break;
@@ -133,12 +139,16 @@ namespace chemstgen {
   }
 
   void apply_transform_to_smiles(Tfm &tfm, Smi &ismi, Db &db) {
-    unordered_set<string> prodset;
+    unordered_map<string, string> prodset;
     {
-      if (tfm.smirks().requiresExplicitHydrogens())
-        make_hydrogens_explicit(ismi.multi_mol());
       int maxapply = FLAGS_maxapply;
-      auto products = tfm.smirks().react(ismi.multi_mol(), 1, maxapply);
+      Smirks main_smirks;
+      main_smirks.init(tfm.main_smirks_str());
+      Molecule mol = ismi.multi_mol(tfm.multiplier());
+      if (main_smirks.requiresExplicitHydrogens()) {
+        make_hydrogens_explicit(mol);
+      }
+      auto products = main_smirks.react(mol, 1, maxapply);
       // make unique set
       Smiles SMILES;
       prodset.clear();
@@ -150,18 +160,20 @@ namespace chemstgen {
         string smi = SMILES.writeCanonical(prod);
         if (!smi.empty()) {
           smi = regex_replace(smi, Xx, R"(*)");
-          prodset.emplace(smi);
+          string smikey =
+            cryptopp_hash<CryptoPP::SHA256,CryptoPP::Base64Encoder>(smi);
+          prodset.emplace(smikey, smi);
         }
       }
     }
 
     if (prodset.size() > 0) {
-      if (tfm.replacedict().size() > 0) {
-        apply_replacedict(prodset, tfm.replacedict());
+      if (tfm.repldict().size() > 0) {
+        apply_replacedict(prodset, tfm.repldict());
       }
       if (FLAGS_verbose) {
         for (const auto &prodcan: prodset)
-          cout << '\t' << prodcan << endl;
+          cout << '\t' << prodcan.second << endl;
       }
       const unsigned int put_flags = (FLAGS_overwrite ? 0 : MDB_NOOVERWRITE);
       string prodsetstr;
@@ -173,9 +185,8 @@ namespace chemstgen {
         osmiwdbi.put(osmiwtxn, ismi.key().c_str(), ismi.smiles().c_str(),
             put_flags);
         for (const auto &prodcan: prodset) {
-          string smikey =
-            cryptopp_hash<CryptoPP::SHA256,CryptoPP::Base64Encoder>(prodcan);
-          osmiwdbi.put(osmiwtxn, smikey.c_str(), prodcan.c_str(), put_flags);
+          osmiwdbi.put(osmiwtxn, prodcan.first.c_str(),
+              prodcan.second.c_str(), put_flags);
 
           if (++cnt > FLAGS_commitchunksize) {
             // commit and reopen transaction
@@ -185,12 +196,12 @@ namespace chemstgen {
             cnt = 0;
           }
 
-          prodsetstr += ' ' + smikey;
+          prodsetstr += ' ' + prodcan.first;
         }
         osmiwtxn.commit();
       }
       prodsetstr[0] = '\t';
-      string rterec = ismi.key() + '.' + tfm.key() + prodsetstr + '\n';
+      string rterec = ismi.key() + '.' + tfm.id() + prodsetstr + '\n';
 #pragma omp critical
       db.orteenv() << rterec;
     }
@@ -227,7 +238,7 @@ namespace chemstgen {
 #pragma omp task firstprivate(ismikey, ismival), shared(db)
           {
             Smi ismi;
-            if (ismi.init(ismikey, ismival, tfm)) {
+            if (ismi.init(ismikey, ismival)) {
               apply_transform_to_smiles(tfm, ismi, db);
             }
           }
