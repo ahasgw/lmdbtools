@@ -87,8 +87,8 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 bin_PROGRAMS = dumpdb$(EXEEXT) makesmidb$(EXEEXT) maketfmdb$(EXEEXT) \
-	mergedb$(EXEEXT) subtrdb$(EXEEXT) smi2svg$(EXEEXT) \
-	chemstgen_dd$(EXEEXT) chemstgen_df$(EXEEXT) \
+	mergedb$(EXEEXT) subtrdb$(EXEEXT) smi2can$(EXEEXT) \
+	smi2svg$(EXEEXT) chemstgen_dd$(EXEEXT) chemstgen_df$(EXEEXT) \
 	chemstgen_ff$(EXEEXT) csg_df$(EXEEXT)
 subdir = src
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -126,6 +126,9 @@ maketfmdb_LDADD = $(LDADD)
 am_mergedb_OBJECTS = mergedb.$(OBJEXT)
 mergedb_OBJECTS = $(am_mergedb_OBJECTS)
 mergedb_LDADD = $(LDADD)
+am_smi2can_OBJECTS = smi2can.$(OBJEXT)
+smi2can_OBJECTS = $(am_smi2can_OBJECTS)
+smi2can_LDADD = $(LDADD)
 am_smi2svg_OBJECTS = smi2svg-smi2svg.$(OBJEXT)
 smi2svg_OBJECTS = $(am_smi2svg_OBJECTS)
 smi2svg_LDADD = $(LDADD)
@@ -182,11 +185,11 @@ am__v_CCLD_1 =
 SOURCES = $(chemstgen_dd_SOURCES) $(chemstgen_df_SOURCES) \
 	$(chemstgen_ff_SOURCES) $(csg_df_SOURCES) $(dumpdb_SOURCES) \
 	$(makesmidb_SOURCES) $(maketfmdb_SOURCES) $(mergedb_SOURCES) \
-	$(smi2svg_SOURCES) $(subtrdb_SOURCES)
+	$(smi2can_SOURCES) $(smi2svg_SOURCES) $(subtrdb_SOURCES)
 DIST_SOURCES = $(chemstgen_dd_SOURCES) $(chemstgen_df_SOURCES) \
 	$(chemstgen_ff_SOURCES) $(csg_df_SOURCES) $(dumpdb_SOURCES) \
 	$(makesmidb_SOURCES) $(maketfmdb_SOURCES) $(mergedb_SOURCES) \
-	$(smi2svg_SOURCES) $(subtrdb_SOURCES)
+	$(smi2can_SOURCES) $(smi2svg_SOURCES) $(subtrdb_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -315,6 +318,7 @@ makesmidb_SOURCES = makesmidb.cc chemstgen.h cryptopp_hash.h lmdb++.h
 maketfmdb_SOURCES = maketfmdb.cc chemstgen.h lmdb++.h
 mergedb_SOURCES = mergedb.cc chemstgen.h lmdb++.h
 subtrdb_SOURCES = subtrdb.cc lmdb++.h
+smi2can_SOURCES = smi2can.cc cryptopp_hash.h
 smi2svg_SOURCES = smi2svg.cc cryptopp_hash.h
 smi2svg_CXXFLAGS = $(eigen3_CFLAGS) $(eigen3_LIBS)
 chemstgen_dd_SOURCES = chemstgen_dd.cc chemstgen.h cryptopp_hash.h lmdb++.h
@@ -429,6 +433,10 @@ mergedb$(EXEEXT): $(mergedb_OBJECTS) $(mergedb_DEPENDENCIES) $(EXTRA_mergedb_DEP
 	@rm -f mergedb$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(mergedb_OBJECTS) $(mergedb_LDADD) $(LIBS)
 
+smi2can$(EXEEXT): $(smi2can_OBJECTS) $(smi2can_DEPENDENCIES) $(EXTRA_smi2can_DEPENDENCIES) 
+	@rm -f smi2can$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(smi2can_OBJECTS) $(smi2can_LDADD) $(LIBS)
+
 smi2svg$(EXEEXT): $(smi2svg_OBJECTS) $(smi2svg_DEPENDENCIES) $(EXTRA_smi2svg_DEPENDENCIES) 
 	@rm -f smi2svg$(EXEEXT)
 	$(AM_V_CXXLD)$(smi2svg_LINK) $(smi2svg_OBJECTS) $(smi2svg_LDADD) $(LIBS)
@@ -451,6 +459,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/makesmidb.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/maketfmdb.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mergedb.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/smi2can.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/smi2svg-smi2svg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/subtrdb.Po@am__quote@
 

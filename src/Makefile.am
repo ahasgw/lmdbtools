@@ -1,4 +1,4 @@
-bin_PROGRAMS = dumpdb makesmidb maketfmdb mergedb subtrdb smi2svg \
+bin_PROGRAMS = dumpdb makesmidb maketfmdb mergedb subtrdb smi2can smi2svg \
 	       chemstgen_dd chemstgen_df chemstgen_ff csg_df
 
 dumpdb_SOURCES = dumpdb.cc lmdb++.h
@@ -10,6 +10,8 @@ maketfmdb_SOURCES = maketfmdb.cc chemstgen.h lmdb++.h
 mergedb_SOURCES = mergedb.cc chemstgen.h lmdb++.h
 
 subtrdb_SOURCES = subtrdb.cc lmdb++.h
+
+smi2can_SOURCES = smi2can.cc cryptopp_hash.h
 
 smi2svg_SOURCES = smi2svg.cc cryptopp_hash.h
 smi2svg_CXXFLAGS = $(eigen3_CFLAGS) $(eigen3_LIBS)

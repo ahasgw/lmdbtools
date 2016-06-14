@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([chemstgen], [0.0.20160208], [ahasgw@gmail.com])
+AC_INIT([chemstgen], [0.0.20160614], [ahasgw@gmail.com])
 AC_CONFIG_SRCDIR([config.h.in])
 AC_CONFIG_HEADERS([config.h])
 AM_INIT_AUTOMAKE
