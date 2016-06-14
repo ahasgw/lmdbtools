@@ -13,6 +13,7 @@
 #include <gflags/gflags.h>
 #include "cryptopp_hash.h"
 
+DEFINE_bool(stdout, false, "output to stdout");
 DEFINE_bool(verbose, false, "verbose output");
 DEFINE_bool(genkey, false, "use generated key as the file name (replacing '/' by '-')");
 
@@ -22,7 +23,7 @@ namespace {
     using namespace std;
     using namespace Helium::Chemist;
 
-    string path = name + ".svg";
+    string path = (FLAGS_stdout ? "/dev/stdout" : name + ".svg");
     ofstream ofs(path);
     if (ofs) {
       auto coords = generate_diagram(mol);
