@@ -22,27 +22,38 @@ namespace {
     using namespace chemstgen;
     using namespace Helium::Chemist;
 
+    const regex pattern(R"(^(\S*)(\s+(.*?)\s*)?$)");
     const regex slash(R"(/)");
+    smatch match;
     ifstream ifs((fname == "-") ? "/dev/stdin" : fname);
-    for (string smi; ifs >> smi;) {
-      Molecule mol;
-      Smiles SMILES;
-      if (!SMILES.read(smi, mol)) {
-        if (FLAGS_verbose) {
-          cerr << SMILES.error().what() << flush;
+    for (string line; getline(ifs, line);) {
+      if (regex_match(line, match, pattern)) {
+        string smi = match[1];
+        string com = match[3];
+
+        Molecule mol;
+        Smiles SMILES;
+        if (!SMILES.read(smi, mol)) {
+          if (FLAGS_verbose) {
+            cerr << SMILES.error().what() << flush;
+          }
+        } else {
+          make_hydrogens_implicit(mol);
+          reset_implicit_hydrogens(mol);
+          string can = SMILES.writeCanonical(mol);
+          if (FLAGS_genkey) {
+            string key;
+            key = cryptopp_hash<CryptoPP::SHA256,CryptoPP::Base64Encoder>(can);
+            key = regex_replace(key, slash, R"(-)");
+            cout << key << "\t" << can << "\n";
+          } else {
+            cout << can;
+            if (!com.empty()) {
+              cout << "\t" << com;
+            }
+            cout << "\n";
+          }
         }
-      } else {
-        make_hydrogens_implicit(mol);
-        reset_implicit_hydrogens(mol);
-        string can = SMILES.writeCanonical(mol);
-        cout << can;
-        if (FLAGS_genkey) {
-          string key;
-          key = cryptopp_hash<CryptoPP::SHA256,CryptoPP::Base64Encoder>(can);
-          key = regex_replace(key, slash, R"(-)");
-          cout << "\t" << key;
-        }
-        cout << "\n";
       }
     }
   }
