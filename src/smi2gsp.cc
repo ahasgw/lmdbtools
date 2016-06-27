@@ -6,12 +6,14 @@
 #include <map>
 #include <regex>
 #include <string>
+#include <Helium/chemist/algorithms.h>
 #include <Helium/chemist/molecule.h>
 #include <Helium/chemist/smiles.h>
 #include <cppformat/format.h>
 #include <gflags/gflags.h>
 
 DEFINE_bool(verbose, false, "verbose output");
+DEFINE_bool(kekulize, false, "kekulize");
 
 namespace {
 
@@ -41,6 +43,9 @@ namespace {
         } else {
           make_hydrogens_implicit(mol);
           reset_implicit_hydrogens(mol);
+          if (FLAGS_kekulize) {
+            kekulize(mol);
+          }
 
           fmt::print("t # {} -1 mol\n", molidx++);
           for (const auto &atom: mol.atoms()) {
