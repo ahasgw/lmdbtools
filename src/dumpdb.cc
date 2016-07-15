@@ -11,7 +11,6 @@
 DEFINE_bool(stat, false, "dump database statistics only");
 DEFINE_bool(key, true, "dump with hash key");
 DEFINE_bool(smiles, false, "dump database in SMILES format");
-DEFINE_uint64(mapsize, 1000000, "lmdb map size in MiB");
 DEFINE_string(separator, "\t", "field separator");
 DEFINE_string(pattern, "", "regular expression pattern");
 
@@ -23,7 +22,7 @@ namespace {
     try {
       for (int i = 1; i < argc; ++i) {
         auto env = lmdb::env::create();
-        env.set_mapsize(FLAGS_mapsize * 1024UL * 1024UL);
+        env.set_mapsize(0);
         env.open(argv[i], MDB_NOSUBDIR | MDB_NOLOCK | MDB_RDONLY);
 
         auto rtxn   = lmdb::txn::begin(env, nullptr, MDB_RDONLY);
