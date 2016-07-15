@@ -10,7 +10,7 @@
 
 DEFINE_bool(stat, false, "dump database statistics only");
 DEFINE_bool(key, true, "dump with hash key");
-DEFINE_bool(smiles, false, "dump database in SMILES format");
+DEFINE_bool(valuekey, false, "dump database value-key order in a row");
 DEFINE_string(separator, "\t", "field separator");
 DEFINE_string(pattern, "", "regular expression pattern");
 
@@ -28,14 +28,15 @@ namespace {
         auto rtxn   = lmdb::txn::begin(env, nullptr, MDB_RDONLY);
         auto dbi    = lmdb::dbi::open(rtxn);
 
+        string linefmt = (FLAGS_key
+            ? (FLAGS_valuekey ? "{2}{1}{0}\n" : "{0}{1}{2}\n")
+            : "{2}\n");
+
         if (FLAGS_stat) {
           auto st   = dbi.stat(rtxn);
-          cout << argv[i] << '\t' << st.ms_entries << endl;
+          fmt::print(cout, linefmt, argv[i], FLAGS_separator, st.ms_entries);
         } else {
           auto cursor = lmdb::cursor::open(rtxn, dbi);
-          string linefmt = (FLAGS_key
-              ? (FLAGS_smiles ? "{2}{1}{0}\n" : "{0}{1}{2}\n")
-              : "{2}\n");
           string key, value;
           if (FLAGS_pattern.empty()) {
             while (cursor.get(key, value, MDB_NEXT)) {
