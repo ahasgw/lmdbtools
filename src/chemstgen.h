@@ -1,4 +1,5 @@
 #pragma once
+#include <csignal>
 #include <cstdint>
 #include <iostream>
 #include <regex>
@@ -14,6 +15,26 @@
 DECLARE_bool(verbose);
 
 namespace chemstgen {
+
+  volatile std::sig_atomic_t signal_raised = 0;
+
+  /// use with OMP_CANCELLATION=true
+  class StSetSignalHandler {
+    public:
+      StSetSignalHandler()  {
+        std::signal(SIGINT,  handler);  // ?= SIG_ERR
+      }
+      ~StSetSignalHandler() {
+        std::signal(SIGINT,  SIG_DFL);
+        if (FLAGS_verbose) {
+#pragma omp critical
+          std::cout << "interrupt signal. shutting down..." << std::endl;
+        }
+      }
+      operator bool() volatile { return chemstgen::signal_raised; }
+    private:
+      static void handler(int signum) { chemstgen::signal_raised = 1; }
+  };
 
   class Tfm {
     private:

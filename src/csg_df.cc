@@ -1,14 +1,15 @@
 #include <config.h>
 #include <cerrno>
-#include <chrono>
 #include <cstdlib>
 #include <ctime>
+#include <chrono>
 #include <exception>
 #include <fstream>
 #include <iostream>
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <omp.h>
 #include <Helium/chemist/algorithms.h>
 #include <Helium/chemist/molecule.h>
 #include <Helium/chemist/rings.h>
@@ -189,6 +190,7 @@ cout << "tfm.multiplier\t" << tfm.multiplier() << endl;
         apply_replacedict(prodset, tfm.repldict());
       }
       if (FLAGS_verbose) {
+#pragma omp critical
         for (const auto &prodcan: prodset)
           cout << '\t' << prodcan.second << endl;
       }
@@ -250,7 +252,6 @@ cout << "tfm.multiplier\t" << tfm.multiplier() << endl;
         {
           Tfm tfm;
           if (!tfm.init(itfmkey, itfmval)) {
-#pragma omp critical
             cerr << "error: tfm " << itfmkey << endl;
           } else {
             tfmrules.emplace_back(tfm);
@@ -261,24 +262,40 @@ cout << "tfm.multiplier\t" << tfm.multiplier() << endl;
       }
 
       { // for each new smiles
+        size_t done = 0;
         auto ismirtxn = lmdb::txn::begin(db.ismienv(), nullptr, MDB_RDONLY);
         auto ismicsr = lmdb::cursor::open(ismirtxn, lmdb::dbi::open(ismirtxn));
         string ismikey, ismival;
-#pragma omp parallel
-#pragma omp single nowait
-        while (ismicsr.get(ismikey, ismival, MDB_NEXT))
-#pragma omp task firstprivate(ismikey, ismival, tfmrules), shared(db)
         {
-          Smi ismi;
-          if (!ismi.init(ismikey, ismival)) {
+          StSetSignalHandler sigrec;
+#pragma omp parallel
+#pragma omp taskgroup
+#pragma omp single nowait
+          while (ismicsr.get(ismikey, ismival, MDB_NEXT))
+          {
+#pragma omp task firstprivate(ismikey, ismival, tfmrules), shared(db, sigrec, done)
+            {
+#pragma omp cancel taskgroup if (sigrec)
+              Smi ismi;
+              if (!ismi.init(ismikey, ismival)) {
 #pragma omp critical
-            cerr << "error: smiles " << ismikey << endl;
-          } else {
-            apply_tfmrules_to_smiles(db, tfmrules, ismi);
+                cerr << "error: smiles " << ismikey << endl;
+              } else {
+                apply_tfmrules_to_smiles(db, tfmrules, ismi);
+              }
+#if 0
+              int th = omp_get_thread_num();
+#pragma omp critical
+              cout << int(sigrec) << ' ' << th << ' ' << ismikey << endl;
+#endif
+              ++done;
+#pragma omp cancellation point taskgroup
+            }
           }
         }
         ismicsr.close();
         ismirtxn.abort();
+        cout << done << " SMILES have been processed" << endl;
       }
     }
     catch (const lmdb::error &e) {
