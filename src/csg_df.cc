@@ -1,5 +1,6 @@
 #include <config.h>
 #include <cerrno>
+#include <cstdint>
 #include <cstdlib>
 #include <ctime>
 #include <chrono>
@@ -23,8 +24,6 @@
 
 DEFINE_bool(verbose, false, "verbose output");
 DEFINE_bool(overwrite, false, "overwrite new value for a duplicate key");
-DEFINE_uint64(itfmdbmapsize,     100, "input transform lmdb mapsize in MiB");
-DEFINE_uint64(ismidbmapsize,   10000, "input smiles lmdb mapsize in MiB");
 DEFINE_uint64(osmidbmapsize, 1000000, "output smiles lmdb mapsize in MiB");
 DEFINE_uint64(commitchunksize,  100, "maximum size of commit chunk");
 DEFINE_int32(maxapply, 1, "maximum number of applying reaction");
@@ -45,8 +44,8 @@ namespace chemstgen {
         osmienv_(lmdb::env::create()),
         orteenv_(argv[4]) {
           // open environments
-          opendb(itfmenv_, argv[1], FLAGS_itfmdbmapsize, MDB_RDONLY);
-          opendb(ismienv_, argv[2], FLAGS_ismidbmapsize, MDB_RDONLY);
+          opendb(itfmenv_, argv[1], UINT64_C(0), MDB_RDONLY);
+          opendb(ismienv_, argv[2], UINT64_C(0), MDB_RDONLY);
           opendb(osmienv_, argv[3], FLAGS_osmidbmapsize);
         }
       ~Db() {}
