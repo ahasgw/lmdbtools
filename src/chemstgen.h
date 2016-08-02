@@ -26,14 +26,14 @@ namespace chemstgen {
       }
       ~StSetSignalHandler() {
         std::signal(SIGINT,  SIG_DFL);
-        if (FLAGS_verbose) {
-#pragma omp critical
-          std::cout << "interrupt signal. shutting down..." << std::endl;
-        }
       }
       operator bool() volatile { return chemstgen::signal_raised; }
     private:
-      static void handler(int signum) { chemstgen::signal_raised = 1; }
+      static void handler(int signum) {
+        chemstgen::signal_raised = 1;
+#pragma omp critical
+        std::cout << "caught signal SIGINT" << std::endl;
+      }
   };
 
   class Tfm {
