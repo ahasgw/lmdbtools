@@ -88,8 +88,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 bin_PROGRAMS = dumpdb$(EXEEXT) scandb$(EXEEXT) makesmidb$(EXEEXT) \
 	maketfmdb$(EXEEXT) mergedb$(EXEEXT) subtrdb$(EXEEXT) \
-	smi2gsp$(EXEEXT) smi2can$(EXEEXT) smi2svg$(EXEEXT) \
-	chemstgen_dd$(EXEEXT) chemstgen_df$(EXEEXT) \
+	fwd2revdb$(EXEEXT) smi2gsp$(EXEEXT) smi2can$(EXEEXT) \
+	smi2svg$(EXEEXT) chemstgen_dd$(EXEEXT) chemstgen_df$(EXEEXT) \
 	chemstgen_ff$(EXEEXT) csg_df$(EXEEXT)
 subdir = src
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -118,6 +118,9 @@ csg_df_LDADD = $(LDADD)
 am_dumpdb_OBJECTS = dumpdb.$(OBJEXT)
 dumpdb_OBJECTS = $(am_dumpdb_OBJECTS)
 dumpdb_LDADD = $(LDADD)
+am_fwd2revdb_OBJECTS = fwd2revdb.$(OBJEXT)
+fwd2revdb_OBJECTS = $(am_fwd2revdb_OBJECTS)
+fwd2revdb_LDADD = $(LDADD)
 am_makesmidb_OBJECTS = makesmidb.$(OBJEXT)
 makesmidb_OBJECTS = $(am_makesmidb_OBJECTS)
 makesmidb_LDADD = $(LDADD)
@@ -191,14 +194,14 @@ am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
 SOURCES = $(chemstgen_dd_SOURCES) $(chemstgen_df_SOURCES) \
 	$(chemstgen_ff_SOURCES) $(csg_df_SOURCES) $(dumpdb_SOURCES) \
-	$(makesmidb_SOURCES) $(maketfmdb_SOURCES) $(mergedb_SOURCES) \
-	$(scandb_SOURCES) $(smi2can_SOURCES) $(smi2gsp_SOURCES) \
-	$(smi2svg_SOURCES) $(subtrdb_SOURCES)
+	$(fwd2revdb_SOURCES) $(makesmidb_SOURCES) $(maketfmdb_SOURCES) \
+	$(mergedb_SOURCES) $(scandb_SOURCES) $(smi2can_SOURCES) \
+	$(smi2gsp_SOURCES) $(smi2svg_SOURCES) $(subtrdb_SOURCES)
 DIST_SOURCES = $(chemstgen_dd_SOURCES) $(chemstgen_df_SOURCES) \
 	$(chemstgen_ff_SOURCES) $(csg_df_SOURCES) $(dumpdb_SOURCES) \
-	$(makesmidb_SOURCES) $(maketfmdb_SOURCES) $(mergedb_SOURCES) \
-	$(scandb_SOURCES) $(smi2can_SOURCES) $(smi2gsp_SOURCES) \
-	$(smi2svg_SOURCES) $(subtrdb_SOURCES)
+	$(fwd2revdb_SOURCES) $(makesmidb_SOURCES) $(maketfmdb_SOURCES) \
+	$(mergedb_SOURCES) $(scandb_SOURCES) $(smi2can_SOURCES) \
+	$(smi2gsp_SOURCES) $(smi2svg_SOURCES) $(subtrdb_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -328,6 +331,7 @@ makesmidb_SOURCES = makesmidb.cc chemstgen.h cryptopp_hash.h lmdb++.h
 maketfmdb_SOURCES = maketfmdb.cc chemstgen.h lmdb++.h
 mergedb_SOURCES = mergedb.cc chemstgen.h lmdb++.h
 subtrdb_SOURCES = subtrdb.cc lmdb++.h
+fwd2revdb_SOURCES = fwd2revdb.cc lmdb++.h
 smi2gsp_SOURCES = smi2gsp.cc
 smi2can_SOURCES = smi2can.cc cryptopp_hash.h
 smi2svg_SOURCES = smi2svg.cc cryptopp_hash.h
@@ -432,6 +436,10 @@ dumpdb$(EXEEXT): $(dumpdb_OBJECTS) $(dumpdb_DEPENDENCIES) $(EXTRA_dumpdb_DEPENDE
 	@rm -f dumpdb$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(dumpdb_OBJECTS) $(dumpdb_LDADD) $(LIBS)
 
+fwd2revdb$(EXEEXT): $(fwd2revdb_OBJECTS) $(fwd2revdb_DEPENDENCIES) $(EXTRA_fwd2revdb_DEPENDENCIES) 
+	@rm -f fwd2revdb$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(fwd2revdb_OBJECTS) $(fwd2revdb_LDADD) $(LIBS)
+
 makesmidb$(EXEEXT): $(makesmidb_OBJECTS) $(makesmidb_DEPENDENCIES) $(EXTRA_makesmidb_DEPENDENCIES) 
 	@rm -f makesmidb$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(makesmidb_OBJECTS) $(makesmidb_LDADD) $(LIBS)
@@ -475,6 +483,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chemstgen_ff.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/csg_df.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dumpdb.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fwd2revdb.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/makesmidb.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/maketfmdb.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mergedb.Po@am__quote@
