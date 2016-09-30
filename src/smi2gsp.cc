@@ -28,7 +28,6 @@ namespace {
     map<int, uint64_t> elm2num;
 
     const regex pattern(R"(^(\S*)(\s+(.*?)\s*)?$)");
-    const regex slash(R"(/)");
     smatch match;
     ifstream ifs((fname == "-") ? "/dev/stdin" : fname);
     for (string line; getline(ifs, line);) {

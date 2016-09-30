@@ -63,7 +63,7 @@ namespace {
               }
             }
             string key =
-              cryptopp_hash<CryptoPP::SHA256,CryptoPP::Base64Encoder>(val);
+              cryptopp_hash<CryptoPP::SHA256,CryptoPP::Base64URLEncoder>(val);
             if (!dbi.put(wtxn, key.c_str(), val.c_str(), put_flags)) {
               if (FLAGS_verbose) {
                 check_duplicates(dbi, wtxn, key, val);

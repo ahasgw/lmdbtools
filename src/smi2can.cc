@@ -13,7 +13,7 @@
 #include "cryptopp_hash.h"
 
 DEFINE_bool(verbose, false, "verbose output");
-DEFINE_bool(genkey, false, "generate key (replacing '/' by '-')");
+DEFINE_bool(genkey, false, "generate key");
 
 namespace {
 
@@ -23,7 +23,6 @@ namespace {
     using namespace Helium::Chemist;
 
     const regex pattern(R"(^(\S*)(\s+(.*?)\s*)?$)");
-    const regex slash(R"(/)");
     smatch match;
     ifstream ifs((fname == "-") ? "/dev/stdin" : fname);
     for (string line; getline(ifs, line);) {
@@ -42,9 +41,8 @@ namespace {
           reset_implicit_hydrogens(mol);
           string can = SMILES.writeCanonical(mol);
           if (FLAGS_genkey) {
-            string key;
-            key = cryptopp_hash<CryptoPP::SHA256,CryptoPP::Base64Encoder>(can);
-            key = regex_replace(key, slash, R"(-)");
+            string key = cryptopp_hash<CryptoPP::SHA256,
+                   CryptoPP::Base64URLEncoder>(can);
             cout << key << "\t" << can << "\n";
           } else {
             cout << can;

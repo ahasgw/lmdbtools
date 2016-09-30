@@ -15,7 +15,7 @@
 
 DEFINE_bool(stdout, false, "output to stdout");
 DEFINE_bool(verbose, false, "verbose output");
-DEFINE_bool(genkey, false, "use generated key as the file name (replacing '/' by '-')");
+DEFINE_bool(genkey, false, "use generated key as the file name");
 
 namespace {
 
@@ -42,7 +42,6 @@ namespace {
     using namespace chemstgen;
     using namespace Helium::Chemist;
 
-    const regex slash(R"(/)");
     ifstream ifs((fname == "-") ? "/dev/stdin" : fname);
     for (string smi; ifs >> smi;) {
       Molecule mol;
@@ -54,8 +53,8 @@ namespace {
       } else {
         string name = smi;
         if (FLAGS_genkey) {
-          name = cryptopp_hash<CryptoPP::SHA256,CryptoPP::Base64Encoder>(smi);
-          name = regex_replace(name, slash, R"(-)");
+          name = cryptopp_hash<CryptoPP::SHA256,
+               CryptoPP::Base64URLEncoder>(smi);
         }
         writeSVG(name, mol);
       }

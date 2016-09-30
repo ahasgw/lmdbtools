@@ -132,7 +132,7 @@ cout << "to here!" << endl;
         reset_implicit_hydrogens(mol);
         string output = SMILES.writeCanonical(mol);
         string outputkey =
-          cryptopp_hash<CryptoPP::SHA256,CryptoPP::Base64Encoder>(output);
+          cryptopp_hash<CryptoPP::SHA256,CryptoPP::Base64URLEncoder>(output);
         set.emplace(outputkey, output);
         // update indeces
         ++idx[dict.size() - 1];
@@ -173,7 +173,7 @@ cout << "to here!" << endl;
         if (!smi.empty()) {
           smi = regex_replace(smi, Xx, R"(*)");
           string smikey =
-            cryptopp_hash<CryptoPP::SHA256,CryptoPP::Base64Encoder>(smi);
+            cryptopp_hash<CryptoPP::SHA256,CryptoPP::Base64URLEncoder>(smi);
           prodset.emplace(smikey, smi);
         }
       }
