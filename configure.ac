@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([chemstgen], [0.0.20160627], [ahasgw@gmail.com])
+AC_INIT([chemstgen], [0.0.20160930], [ahasgw@gmail.com])
 AC_CONFIG_SRCDIR([config.h.in])
 AC_CONFIG_HEADERS([config.h])
 AM_INIT_AUTOMAKE
@@ -10,7 +10,7 @@ AM_INIT_AUTOMAKE
 # Checks for programs.
 AC_LANG_PUSH([C++])
 AC_PROG_CXX
-AX_CXX_COMPILE_STDCXX_11(ext, mandatory)
+AX_CXX_COMPILE_STDCXX(11, ext, mandatory)
 AC_OPENMP
 AC_SUBST(AM_CXXFLAGS, "$OPENMP_CXXFLAGS")
 AC_LANG_POP([C++])
