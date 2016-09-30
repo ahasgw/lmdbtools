@@ -15,6 +15,7 @@
 DEFINE_bool(verbose, false, "verbose output");
 DEFINE_bool(kekulize, false, "kekulize");
 DEFINE_bool(aromatize, false, "aromatize");
+DEFINE_bool(makehsexplicit, false, "make all hydrogens explicit");
 
 namespace {
 
@@ -44,6 +45,9 @@ namespace {
         } else {
           make_hydrogens_implicit(mol);
           reset_implicit_hydrogens(mol);
+          if (FLAGS_makehsexplicit) {
+            make_hydrogens_explicit(mol);
+          }
           if (FLAGS_kekulize && !FLAGS_aromatize) {
             kekulize(mol);
           } else if (!FLAGS_kekulize && FLAGS_aromatize) {
