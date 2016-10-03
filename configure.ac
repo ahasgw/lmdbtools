@@ -21,8 +21,8 @@ AC_CHECK_LIB([gflags], [main], [],
              [AC_MSG_ERROR([libgflags is required])])
 AC_CHECK_LIB([lmdb], [main], [],
              [AC_MSG_ERROR([liblmdb is required])])
-AC_CHECK_LIB([cppformat], [main], [],
-             [AC_MSG_ERROR([libcppformat is required])])
+AC_CHECK_LIB([fmt], [main], [],
+             [AC_MSG_ERROR([libfmt is required])])
 AC_CHECK_LIB([cryptopp], [main], [],
              [AC_MSG_ERROR([libcryptopp is required])])
 AC_CHECK_LIB([helium], [main], [],

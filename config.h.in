@@ -3,11 +3,11 @@
 /* define if the compiler supports basic C++11 syntax */
 #undef HAVE_CXX11
 
-/* Define to 1 if you have the `cppformat' library (-lcppformat). */
-#undef HAVE_LIBCPPFORMAT
-
 /* Define to 1 if you have the `cryptopp' library (-lcryptopp). */
 #undef HAVE_LIBCRYPTOPP
+
+/* Define to 1 if you have the `fmt' library (-lfmt). */
+#undef HAVE_LIBFMT
 
 /* Define to 1 if you have the `gflags' library (-lgflags). */
 #undef HAVE_LIBGFLAGS

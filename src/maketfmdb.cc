@@ -5,7 +5,8 @@
 #include <iostream>
 #include <regex>
 #include <string>
-#include <cppformat/format.h>
+#include <fmt/format.h>
+#include <fmt/ostream.h>
 #include <gflags/gflags.h>
 #include "lmdb++.h"
 #include "chemstgen.h"

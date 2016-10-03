@@ -16,7 +16,8 @@
 #include <Helium/chemist/rings.h>
 #include <Helium/chemist/smiles.h>
 #include <Helium/chemist/smirks.h>
-#include <cppformat/format.h>
+#include <fmt/format.h>
+#include <fmt/ostream.h>
 #include <gflags/gflags.h>
 #include "cryptopp_hash.h"
 #include "lmdb++.h"

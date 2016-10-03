@@ -3,7 +3,8 @@
 #include <cstdlib>
 #include <iostream>
 #include <string>
-#include <cppformat/format.h>
+#include <fmt/format.h>
+#include <fmt/ostream.h>
 #include <gflags/gflags.h>
 #include "lmdb++.h"
 

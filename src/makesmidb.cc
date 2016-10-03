@@ -7,7 +7,8 @@
 #include <string>
 #include <Helium/chemist/molecule.h>
 #include <Helium/chemist/smiles.h>
-#include <cppformat/format.h>
+#include <fmt/format.h>
+#include <fmt/ostream.h>
 #include <gflags/gflags.h>
 #include "cryptopp_hash.h"
 #include "lmdb++.h"
