@@ -1,5 +1,5 @@
 bin_PROGRAMS = dumpdb scandb makesmidb maketfmdb mergedb subtrdb fwd2revdb \
-	       smi2gsp smi2can smi2svg \
+	       smi2can smi2svg \
 	       chemstgen_dd chemstgen_df chemstgen_ff csg_df
 
 dumpdb_SOURCES = dumpdb.cc lmdb++.h
@@ -15,8 +15,6 @@ mergedb_SOURCES = mergedb.cc chemstgen.h lmdb++.h
 subtrdb_SOURCES = subtrdb.cc lmdb++.h
 
 fwd2revdb_SOURCES = fwd2revdb.cc lmdb++.h
-
-smi2gsp_SOURCES = smi2gsp.cc
 
 smi2can_SOURCES = smi2can.cc cryptopp_hash.h
 
