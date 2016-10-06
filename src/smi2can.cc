@@ -38,8 +38,8 @@ namespace {
             cerr << SMILES.error().what() << flush;
           }
         } else {
-          make_hydrogens_implicit(mol);
           reset_implicit_hydrogens(mol);
+          make_hydrogens_implicit(mol);
           string can = SMILES.writeCanonical(mol);
           if (FLAGS_genkey) {
             string key = cryptopp_hash<CryptoPP::SHA256,
