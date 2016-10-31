@@ -3,13 +3,12 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <libgen.h>
 #include <regex>
 #include <sstream>
 #include <string>
 #include <Helium/chemist/molecule.h>
 #include <Helium/chemist/smiles.h>
-#include <fmt/format.h>
-#include <fmt/ostream.h>
 #include <gflags/gflags.h>
 #include "cryptopp_hash.h"
 
@@ -60,7 +59,9 @@ namespace {
 }  // namespace
 
 int main(int argc, char *argv[]) {
-  std::string usage = fmt::format("usage: {} <smilesfile> ...", argv[0]);
+  std::string progname = basename(argv[0]);
+  std::string usage = "usage: " + progname +
+    " [options] <smilesfile> ...";
   gflags::SetUsageMessage(usage);
   gflags::SetVersionString(PACKAGE_VERSION);
   gflags::ParseCommandLineFlags(&argc, &argv, true);

@@ -1,11 +1,10 @@
 #include <config.h>
 #include <cerrno>
 #include <cstdlib>
+#include <libgen.h>
 #include <fstream>
 #include <iostream>
 #include <string>
-#include <fmt/format.h>
-#include <fmt/ostream.h>
 #include <gflags/gflags.h>
 #include "lmdb++.h"
 
@@ -38,7 +37,13 @@ namespace {
           lmdb::val v;
           if (dbi.get(rtxn, k, v)) {
             const string value(v.data(), v.size());
-            fmt::print(cout, linefmt, key, FLAGS_separator, value);
+            if (FLAGS_key && FLAGS_valuekey) {
+              cout << value << FLAGS_separator << key << '\n';
+            } else if (FLAGS_key && !FLAGS_valuekey) {
+              cout << key << FLAGS_separator << value << '\n';
+            } else {
+              cout << value << '\n';
+            }
           }
         }
       }
@@ -55,7 +60,9 @@ namespace {
 }  // namespace
 
 int main(int argc, char *argv[]) {
-  std::string usage = fmt::format("usage: {} <dbname> <idfile> ...", argv[0]);
+  std::string progname = basename(argv[0]);
+  std::string usage = "usage: " + progname +
+    " [options] <dbname> <idfile> ...";
   gflags::SetUsageMessage(usage);
   gflags::SetVersionString(PACKAGE_VERSION);
   gflags::ParseCommandLineFlags(&argc, &argv, true);

@@ -1,15 +1,15 @@
 #pragma once
 #include <csignal>
 #include <cstdint>
+#include <iomanip>
 #include <iostream>
 #include <regex>
+#include <sstream>
 #include <string>
 #include <vector>
 #include <Helium/chemist/molecule.h>
 #include <Helium/chemist/smiles.h>
 #include <Helium/chemist/smirks.h>
-#include <fmt/format.h>
-#include <fmt/ostream.h>
 #include <gflags/gflags.h>
 #include "lmdb++.h"
 
@@ -129,7 +129,11 @@ namespace chemstgen {
         return true;
       }
 
-      std::string id() const { return fmt::sprintf("%06d", id_); }
+      std::string id() const {
+        std::ostringstream oss;
+        oss << std::setfill('0') << std::setw(6) << id_;
+        return oss.str();
+      }
       uint_fast16_t multiplier() const { return multiplier_; }
       const std::string &main_smirks_str() const { return main_smirks_str_; }
       const std::vector<std::vector<std::string>> &repldict() const {

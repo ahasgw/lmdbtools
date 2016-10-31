@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cstdlib>
 #include <ctime>
+#include <libgen.h>
 #include <exception>
 #include <fstream>
 #include <iostream>
@@ -14,8 +15,6 @@
 #include <Helium/chemist/rings.h>
 #include <Helium/chemist/smiles.h>
 #include <Helium/chemist/smirks.h>
-#include <fmt/format.h>
-#include <fmt/ostream.h>
 #include <gflags/gflags.h>
 #include "cryptopp_hash.h"
 #include "lmdb++.h"
@@ -263,10 +262,10 @@ namespace chemstgen {
 }  // namespace chemstgen
 
 int main(int argc, char *argv[]) {
-  std::string usage = fmt::format("usage: {} "
-//      "<itfmdb> <inewdb> <ismidb> <irtedb> <onewdb> <osmidb> <ortedb>",
-      "<itfm.db> <ismi.db> <osmi.db> <orte.tsv>",
-      argv[0]);
+  std::string progname = basename(argv[0]);
+  std::string usage = "usage: " + progname +
+    //" [options] <itfmdb> <inewdb> <ismidb> <irtedb> <onewdb> <osmidb> <ortedb>",
+    " [options] <itfm.db> <ismi.db> <osmi.db> <orte.tsv>";
   gflags::SetUsageMessage(usage);
   gflags::SetVersionString(PACKAGE_VERSION);
   gflags::ParseCommandLineFlags(&argc, &argv, true);

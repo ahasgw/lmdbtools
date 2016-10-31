@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <ctime>
+#include <libgen.h>
 #include <chrono>
 #include <exception>
 #include <fstream>
@@ -16,8 +17,6 @@
 #include <Helium/chemist/rings.h>
 #include <Helium/chemist/smiles.h>
 #include <Helium/chemist/smirks.h>
-#include <fmt/format.h>
-#include <fmt/ostream.h>
 #include <gflags/gflags.h>
 #include "cryptopp_hash.h"
 #include "lmdb++.h"
@@ -308,9 +307,9 @@ cout << "tfm.multiplier\t" << tfm.multiplier() << endl;
 }  // namespace chemstgen
 
 int main(int argc, char *argv[]) {
-  std::string usage = fmt::format("usage: {} "
-      "<itfm.db> <ismi.db> <osmi.db> <orte.tsv>",
-      argv[0]);
+  std::string progname = basename(argv[0]);
+  std::string usage = "usage: " + progname +
+    " [options] <itfm.db> <ismi.db> <osmi.db> <orte.tsv>";
   gflags::SetUsageMessage(usage);
   gflags::SetVersionString(PACKAGE_VERSION);
   gflags::ParseCommandLineFlags(&argc, &argv, true);

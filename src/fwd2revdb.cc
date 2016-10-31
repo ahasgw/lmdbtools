@@ -1,13 +1,12 @@
 #include <config.h>
 #include <cerrno>
 #include <cstdlib>
+#include <libgen.h>
 #include <fstream>
 #include <iostream>
 #include <regex>
 #include <sstream>
 #include <string>
-#include <fmt/format.h>
-#include <fmt/ostream.h>
 #include <gflags/gflags.h>
 #include "lmdb++.h"
 
@@ -76,7 +75,9 @@ namespace {
 }  // namespace
 
 int main(int argc, char *argv[]) {
-  std::string usage = fmt::format("usage: {} <dbname> <edgefile> ...", argv[0]);
+  std::string progname = basename(argv[0]);
+  std::string usage = "usage: " + progname +
+    " [options] <dbname> <edgefile> ...";
   gflags::SetUsageMessage(usage);
   gflags::SetVersionString(PACKAGE_VERSION);
   gflags::ParseCommandLineFlags(&argc, &argv, true);

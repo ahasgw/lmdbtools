@@ -1,11 +1,10 @@
 #include <config.h>
 #include <cerrno>
 #include <cstdlib>
+#include <libgen.h>
 #include <iostream>
 #include <regex>
 #include <string>
-#include <fmt/format.h>
-#include <fmt/ostream.h>
 #include <gflags/gflags.h>
 #include "lmdb++.h"
 #include "chemstgen.h"
@@ -76,7 +75,9 @@ namespace {
 }  // namespace
 
 int main(int argc, char *argv[]) {
-  std::string usage = fmt::format("usage: {} <destdb> <dbname> ...", argv[0]);
+  std::string progname = basename(argv[0]);
+  std::string usage = "usage: " + progname +
+    " [options] <destdb> <dbname> ...";
   gflags::SetUsageMessage(usage);
   gflags::SetVersionString(PACKAGE_VERSION);
   gflags::ParseCommandLineFlags(&argc, &argv, true);

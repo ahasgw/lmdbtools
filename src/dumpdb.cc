@@ -1,11 +1,10 @@
 #include <config.h>
 #include <cerrno>
 #include <cstdlib>
+#include <libgen.h>
 #include <iostream>
 #include <regex>
 #include <string>
-#include <fmt/format.h>
-#include <fmt/ostream.h>
 #include <gflags/gflags.h>
 #include "lmdb++.h"
 
@@ -29,25 +28,45 @@ namespace {
         auto rtxn   = lmdb::txn::begin(env, nullptr, MDB_RDONLY);
         auto dbi    = lmdb::dbi::open(rtxn);
 
-        string linefmt = (FLAGS_key
-            ? (FLAGS_valuekey ? "{2}{1}{0}\n" : "{0}{1}{2}\n")
-            : "{2}\n");
-
         if (FLAGS_stat) {
           auto st   = dbi.stat(rtxn);
-          fmt::print(cout, linefmt, argv[i], FLAGS_separator, st.ms_entries);
+          cout << argv[i] << FLAGS_separator << st.ms_entries << '\n';
         } else {
           auto cursor = lmdb::cursor::open(rtxn, dbi);
           string key, value;
           if (FLAGS_pattern.empty()) {
-            while (cursor.get(key, value, MDB_NEXT)) {
-              fmt::print(cout, linefmt, key, FLAGS_separator, value);
+            if (FLAGS_key && FLAGS_valuekey) {
+              while (cursor.get(key, value, MDB_NEXT)) {
+                cout << value << FLAGS_separator << key << '\n';
+              }
+            } else if (FLAGS_key && !FLAGS_valuekey) {
+              while (cursor.get(key, value, MDB_NEXT)) {
+                cout << key << FLAGS_separator << value << '\n';
+              }
+            } else {
+              while (cursor.get(key, value, MDB_NEXT)) {
+                cout << value << '\n';
+              }
             }
           } else {
             const regex pattern(FLAGS_pattern);
-            while (cursor.get(key, value, MDB_NEXT)) {
-              if (regex_search(key, pattern)) {
-                fmt::print(cout, linefmt, key, FLAGS_separator, value);
+            if (FLAGS_key && FLAGS_valuekey) {
+              while (cursor.get(key, value, MDB_NEXT)) {
+                if (regex_search(key, pattern)) {
+                  cout << value << FLAGS_separator << key << '\n';
+                }
+              }
+            } else if (FLAGS_key && !FLAGS_valuekey) {
+              while (cursor.get(key, value, MDB_NEXT)) {
+                if (regex_search(key, pattern)) {
+                  cout << key << FLAGS_separator << value << '\n';
+                }
+              }
+            } else {
+              while (cursor.get(key, value, MDB_NEXT)) {
+                if (regex_search(key, pattern)) {
+                  cout << value << '\n';
+                }
               }
             }
           }
@@ -68,7 +87,9 @@ namespace {
 }  // namespace
 
 int main(int argc, char *argv[]) {
-  std::string usage = fmt::format("usage: {} <dbname> ...", argv[0]);
+  std::string progname = basename(argv[0]);
+  std::string usage = "usage: " + progname +
+    " [options] <dbname> ...";
   gflags::SetUsageMessage(usage);
   gflags::SetVersionString(PACKAGE_VERSION);
   gflags::ParseCommandLineFlags(&argc, &argv, true);
