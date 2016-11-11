@@ -8,7 +8,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
-#include <unordered_set>
+#include <unordered_map>
 #include <vector>
 #include <Helium/chemist/algorithms.h>
 #include <Helium/chemist/molecule.h>
