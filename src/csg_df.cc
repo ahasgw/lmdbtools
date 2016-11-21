@@ -128,8 +128,8 @@ for (int k = 0; k < dict.size(); ++k) cout<<' '<<idx[k]; cout << endl;
 cout << "to here!" << endl;
 #endif
         // make unique set
-        reset_implicit_hydrogens(mol);
         make_hydrogens_implicit(mol);
+        reset_implicit_hydrogens(mol);
         string output = SMILES.writeCanonical(mol);
         string outputkey =
           cryptopp_hash<CryptoPP::SHA256,CryptoPP::Base64URLEncoder>(output);
@@ -167,8 +167,8 @@ cout << "to here!" << endl;
       for (const auto &product: products) {
         Molecule prod;
         pick_marked_component(*product, prod);
-        reset_implicit_hydrogens(prod);
         make_hydrogens_implicit(prod);
+        reset_implicit_hydrogens(prod);
         string smi = SMILES.writeCanonical(prod);
         if (!smi.empty()) {
           smi = regex_replace(smi, Xx, R"(*)");

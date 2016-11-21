@@ -134,8 +134,8 @@ namespace chemstgen {
           SMILES.read(regex_replace(SMILES.write(mol), Xx, R"(*)"), mol);
         }
         // make unique set
-        reset_implicit_hydrogens(mol);
         make_hydrogens_implicit(mol);
+        reset_implicit_hydrogens(mol);
         string output = SMILES.writeCanonical(mol);
         string outputkey =
           cryptopp_hash<CryptoPP::SHA256,CryptoPP::Base64URLEncoder>(output);
@@ -173,8 +173,8 @@ namespace chemstgen {
       for (const auto &product: products) {
         Molecule prod;
         pick_marked_component(*product, prod);
-        reset_implicit_hydrogens(prod);
         make_hydrogens_implicit(prod);
+        reset_implicit_hydrogens(prod);
         string smi = SMILES.writeCanonical(prod);
         if (!smi.empty()) {
           smi = regex_replace(smi, Xx, R"(*)");

@@ -57,8 +57,8 @@ namespace {
                   (num_connected_components(mol) != 1))
                 continue;
               if (FLAGS_canonicalize) {
-                reset_implicit_hydrogens(mol);
                 make_hydrogens_implicit(mol);
+                reset_implicit_hydrogens(mol);
                 val = SMILES.writeCanonical(mol);
               }
             }
