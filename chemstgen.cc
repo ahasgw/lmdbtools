@@ -1,15 +1,17 @@
-#include <config.h>
+#include "config.h"
 #include <cerrno>
-#include <chrono>
+#include <cstdint>
 #include <cstdlib>
 #include <ctime>
 #include <libgen.h>
+#include <chrono>
 #include <exception>
 #include <fstream>
 #include <iostream>
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <omp.h>
 #include <Helium/chemist/algorithms.h>
 #include <Helium/chemist/molecule.h>
 #include <Helium/chemist/rings.h>
@@ -22,8 +24,6 @@
 
 DEFINE_bool(verbose, false, "verbose output");
 DEFINE_bool(overwrite, false, "overwrite new value for a duplicate key");
-DEFINE_uint64(itfmdbmapsize,     100, "input transform lmdb mapsize in MiB");
-DEFINE_uint64(ismidbmapsize,   10000, "input smiles lmdb mapsize in MiB");
 DEFINE_uint64(osmidbmapsize, 1000000, "output smiles lmdb mapsize in MiB");
 DEFINE_uint64(commitchunksize,  100, "maximum size of commit chunk");
 DEFINE_int32(maxapply, 1, "maximum number of applying reaction");
@@ -44,8 +44,8 @@ namespace chemstgen {
         osmienv_(lmdb::env::create()),
         orteenv_(argv[4]) {
           // open environments
-          opendb(itfmenv_, argv[1], FLAGS_itfmdbmapsize, MDB_RDONLY);
-          opendb(ismienv_, argv[2], FLAGS_ismidbmapsize, MDB_RDONLY);
+          opendb(itfmenv_, argv[1], UINT64_C(0), MDB_RDONLY);
+          opendb(ismienv_, argv[2], UINT64_C(0), MDB_RDONLY);
           opendb(osmienv_, argv[3], FLAGS_osmidbmapsize);
         }
       ~Db() {}
@@ -97,16 +97,25 @@ namespace chemstgen {
     Smirks auxSMIRKS;
     Molecule mol;
     for (const auto &prodcan: prodset) {
-      vector<vector<string>::size_type> idx(dict.size(), 0);
+#if 0
+cout << "prodcan.smi\t" << prodcan.second << endl;
+cout << "dict.size()\t" << dict.size() << endl;
+cout << "dict[0].size()\t" << dict[0].size() << endl;
+for (int k = 0; k < dict.size(); ++k) cout<<' '<<dict[k].size(); cout << endl;
+#endif
+      vector<vector<Smirks>::size_type> idx(dict.size(), 0);
       for (;;) {
         if (!SMILES.read(prodcan.second, mol)) {
           if (FLAGS_verbose) {
-#pragma omp critical
             cerr << "error: cannot read smiles: " << prodcan.second << endl;
           }
           break;
         }
-        for (vector<vector<string>>::size_type i = 0; i < dict.size(); ++i) {
+#if 0
+cout << "from here" << endl;
+for (int k = 0; k < dict.size(); ++k) cout<<' '<<idx[k]; cout << endl;
+#endif
+        for (vector<vector<Smirks>>::size_type i = 0; i < dict.size(); ++i) {
           auxSMIRKS.init(dict[i][idx[i]]);
           if (auxSMIRKS.requiresExplicitHydrogens()) {
             make_hydrogens_explicit(mol);
@@ -115,6 +124,9 @@ namespace chemstgen {
           // this is not effective. mol->smiles->mol
           SMILES.read(regex_replace(SMILES.write(mol), Xx, R"(*)"), mol);
         }
+#if 0
+cout << "to here!" << endl;
+#endif
         // make unique set
         make_hydrogens_implicit(mol);
         reset_implicit_hydrogens(mol);
@@ -138,7 +150,7 @@ namespace chemstgen {
     prodset = set;
   }
 
-  void apply_transform_to_smiles(Tfm &tfm, Smi &ismi, Db &db) {
+  void apply_tfm_to_smiles(Db &db, Tfm &tfm, Smi &ismi) {
     unordered_map<string, string> prodset;
     {
       int maxapply = FLAGS_maxapply;
@@ -169,9 +181,15 @@ namespace chemstgen {
 
     if (prodset.size() > 0) {
       if (tfm.repldict().size() > 0) {
+#if 0
+cout << "ismi.key\t" << ismi.key() << endl;
+cout << "ismi.smi\t" << ismi.smiles() << endl;
+cout << "tfm.multiplier\t" << tfm.multiplier() << endl;
+#endif
         apply_replacedict(prodset, tfm.repldict());
       }
       if (FLAGS_verbose) {
+#pragma omp critical
         for (const auto &prodcan: prodset)
           cout << '\t' << prodcan.second << endl;
       }
@@ -207,50 +225,77 @@ namespace chemstgen {
     }
   }
 
+  void apply_tfmrules_to_smiles(Db &db, vector<Tfm> &tfmrules, Smi &ismi) {
+    for (auto &tfm: tfmrules) {
+#if 0
+      string rterec = ismi.key() + '.' + tfm.id();
+#pragma omp critical
+      cout << rterec << endl;
+#endif
+      apply_tfm_to_smiles(db, tfm, ismi);
+    }
+  }
+
   int chemstgen(int &argc, char *argv[]) {
+    cout.sync_with_stdio(false);
+    cerr.sync_with_stdio(false);
     try {
       // open environments
       Db db(argc, argv);
 
-      // for each transform
-      auto itfmrtxn = lmdb::txn::begin(db.itfmenv(), nullptr, MDB_RDONLY);
-      auto itfmcsr = lmdb::cursor::open(itfmrtxn, lmdb::dbi::open(itfmrtxn));
-      string itfmkey, itfmval;
-#pragma omp parallel
-#pragma omp single nowait
-      while (itfmcsr.get(itfmkey, itfmval, MDB_NEXT))
-#pragma omp task firstprivate(itfmkey, itfmval), shared(db)
-      {
-        Tfm tfm;
-        if (tfm.init(itfmkey, itfmval)) {
-          chrono::time_point<chrono::system_clock> tp0, tp1;
-          tp0 = chrono::system_clock::now();
-#pragma omp critical
-          cout << itfmkey << endl;
+      vector<Tfm> tfmrules;
+      { // read all transforms
+        auto itfmrtxn = lmdb::txn::begin(db.itfmenv(), nullptr, MDB_RDONLY);
+        auto itfmcsr = lmdb::cursor::open(itfmrtxn, lmdb::dbi::open(itfmrtxn));
+        for (string itfmkey, itfmval; itfmcsr.get(itfmkey, itfmval, MDB_NEXT);)
+        {
+          Tfm tfm;
+          if (!tfm.init(itfmkey, itfmval)) {
+            cerr << "error: tfm " << itfmkey << endl;
+          } else {
+            tfmrules.emplace_back(tfm);
+          }
+        }
+        itfmcsr.close();
+        itfmrtxn.abort();
+      }
 
-          // for each new smiles
-          auto ismirtxn = lmdb::txn::begin(db.ismienv(), nullptr, MDB_RDONLY);
-          auto ismicsr = lmdb::cursor::open(ismirtxn, lmdb::dbi::open(ismirtxn));
-          string ismikey, ismival;
+      { // for each new smiles
+        size_t done = 0;
+        auto ismirtxn = lmdb::txn::begin(db.ismienv(), nullptr, MDB_RDONLY);
+        auto ismicsr = lmdb::cursor::open(ismirtxn, lmdb::dbi::open(ismirtxn));
+        string ismikey, ismival;
+        {
+          StSetSignalHandler sigrec;
 #pragma omp parallel
+#pragma omp taskgroup
 #pragma omp single nowait
           while (ismicsr.get(ismikey, ismival, MDB_NEXT))
-#pragma omp task firstprivate(ismikey, ismival), shared(db)
           {
-            Smi ismi;
-            if (ismi.init(ismikey, ismival)) {
-              apply_transform_to_smiles(tfm, ismi, db);
+#pragma omp task firstprivate(ismikey, ismival, tfmrules), shared(db, sigrec, done)
+            {
+#pragma omp cancel taskgroup if (sigrec)
+              Smi ismi;
+              if (!ismi.init(ismikey, ismival)) {
+#pragma omp critical
+                cerr << "error: smiles " << ismikey << endl;
+              } else {
+                apply_tfmrules_to_smiles(db, tfmrules, ismi);
+              }
+#if 0
+              int th = omp_get_thread_num();
+#pragma omp critical
+              cout << int(sigrec) << ' ' << th << ' ' << ismikey << endl;
+#endif
+              ++done;
+#pragma omp cancellation point taskgroup
             }
           }
-          ismirtxn.abort();
-          tp1 = chrono::system_clock::now();
-          chrono::duration<double> elapsed_second = tp1 - tp0;
-#pragma omp critical
-          cout << '\t' << itfmkey << '\t' << elapsed_second.count() << endl;
         }
+        ismicsr.close();
+        ismirtxn.abort();
+        cout << done << " SMILES have been processed" << endl;
       }
-      itfmcsr.close();
-      itfmrtxn.abort();
     }
     catch (const lmdb::error &e) {
       cerr << e.what() << endl;
@@ -264,7 +309,6 @@ namespace chemstgen {
 int main(int argc, char *argv[]) {
   std::string progname = basename(argv[0]);
   std::string usage = "usage: " + progname +
-    //" [options] <itfmdb> <inewdb> <ismidb> <irtedb> <onewdb> <osmidb> <ortedb>",
     " [options] <itfm.db> <ismi.db> <osmi.db> <orte.tsv>";
   gflags::SetUsageMessage(usage);
   gflags::SetVersionString(PACKAGE_VERSION);

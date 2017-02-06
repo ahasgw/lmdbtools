@@ -1,3 +1,4 @@
+.depend
 *.[oa]
 *.deps
 *.swp
@@ -6,4 +7,13 @@
 *.spec
 *.cache
 *~
-
+dumpdb
+scandb
+makesmidb
+maketfmdb
+mergedb
+subtrdb
+chemstgen
+fwd2revdb
+smi2can
+smi2svg
