@@ -2,73 +2,95 @@
 #include <cerrno>
 #include <cstdlib>
 #include <libgen.h>
+#include <unistd.h>
 #include <fstream>
 #include <iostream>
 #include <string>
-#include <gflags/gflags.h>
 #include "lmdb++.h"
 
-DEFINE_bool(key, true, "dump with hash key");
-DEFINE_bool(valuekey, false, "dump database value-key order in a row");
-DEFINE_string(separator, "\t", "field separator");
+int main(int argc, char *argv[]) {
+  using namespace std;
 
-namespace {
+  bool withkey = true;  // dump with hash key
+  bool valuekey = false;  // dump database value-key order in a row
+  string separator = "\t";  // field separator
 
-  int scan_db(int argc, char *argv[]) {
-    using namespace std;
-    cout.sync_with_stdio(false);
+  string progname = basename(argv[0]);
+  string usage = "usage: " + progname +
+    " [options] <dbname> <idfile> ...\n"
+    "options: -k           dump with hash key\n"
+    "         -t           dump database in value-key order\n"
+    "         -s <string>  field separator\n"
+    ;
+  for (opterr = 0;;) {
+    int opt = getopt(argc, argv, ":kts:");
+    if (opt == -1) break;
     try {
-      auto env = lmdb::env::create();
-      env.set_mapsize(0);
-      env.open(argv[1], MDB_NOSUBDIR | MDB_NOLOCK | MDB_RDONLY);
+      switch (opt) {
+        case 'k': { withkey = true; break; }
+        case 't': { valuekey = true; break; }
+        case 's': { separator = optarg; break; }
+        case ':': { cout << "missing argument of -"
+                    << static_cast<char>(optopt) << endl;
+                    exit(EXIT_FAILURE);
+                  }
+        case '?':
+        default:  { cout << "unknown option -"
+                    << static_cast<char>(optopt) << '\n' << usage << flush;
+                    exit(EXIT_FAILURE);
+                  }
+      }
+    }
+    catch (...) {
+      cout << "invalid argument: " << argv[optind - 1] << endl;
+      exit(EXIT_FAILURE);
+    }
+  }
+  if (argc - optind < 2) {
+    cout << "too few arguments\n" << usage << flush;
+    exit(EXIT_FAILURE);
+  }
 
-      auto rtxn   = lmdb::txn::begin(env, nullptr, MDB_RDONLY);
-      auto dbi    = lmdb::dbi::open(rtxn);
+  int oi = optind;
+  string idbfname(argv[oi++]);
 
-      string linefmt = (FLAGS_key
-          ? (FLAGS_valuekey ? "{2}{1}{0}\n" : "{0}{1}{2}\n")
-          : "{2}\n");
+  cout.sync_with_stdio(false);
 
-      for (int i = 2; i < argc; ++i) {
-        string fname(argv[i]);
-        ifstream ifs((fname == "-") ? "/dev/stdin" : fname);
-        for (string key; ifs >> key;) {
-          lmdb::val k{key.data(), key.size()};
-          lmdb::val v;
-          if (dbi.get(rtxn, k, v)) {
-            const string value(v.data(), v.size());
-            if (FLAGS_key && FLAGS_valuekey) {
-              cout << value << FLAGS_separator << key << '\n';
-            } else if (FLAGS_key && !FLAGS_valuekey) {
-              cout << key << FLAGS_separator << value << '\n';
-            } else {
-              cout << value << '\n';
-            }
+  try {
+    auto env = lmdb::env::create();
+    env.set_mapsize(0);
+    env.open(idbfname.c_str(), MDB_NOSUBDIR | MDB_NOLOCK | MDB_RDONLY);
+
+    auto rtxn   = lmdb::txn::begin(env, nullptr, MDB_RDONLY);
+    auto dbi    = lmdb::dbi::open(rtxn);
+
+    string linefmt = (withkey
+        ? (valuekey ? "{2}{1}{0}\n" : "{0}{1}{2}\n")
+        : "{2}\n");
+
+    for (int i = oi; i < argc; ++i) {
+      ifstream ifs(argv[i]);
+      for (string key; ifs >> key;) {
+        lmdb::val k{key.data(), key.size()};
+        lmdb::val v;
+        if (dbi.get(rtxn, k, v)) {
+          const string value(v.data(), v.size());
+          if (withkey && valuekey) {
+            cout << value << separator << key << '\n';
+          } else if (withkey && !valuekey) {
+            cout << key << separator << value << '\n';
+          } else {
+            cout << value << '\n';
           }
         }
       }
-      rtxn.abort();
     }
-    catch (const lmdb::error &e) {
-      cout << flush;
-      cerr << e.what() << endl;
-      return EXIT_FAILURE;
-    }
-    return EXIT_SUCCESS;
+    rtxn.abort();
   }
-
-}  // namespace
-
-int main(int argc, char *argv[]) {
-  std::string progname = basename(argv[0]);
-  std::string usage = "usage: " + progname +
-    " [options] <dbname> <idfile> ...";
-  gflags::SetUsageMessage(usage);
-  gflags::SetVersionString(PACKAGE_VERSION);
-  gflags::ParseCommandLineFlags(&argc, &argv, true);
-  if (argc < 2) {
-    std::cout << usage << std::endl;
+  catch (const lmdb::error &e) {
+    cout << flush;
+    cerr << e.what() << endl;
     return EXIT_FAILURE;
   }
-  return scan_db(argc, argv);
+  return EXIT_SUCCESS;
 }

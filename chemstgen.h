@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CHEMSTGEN_H__
+#define CHEMSTGEN_H__
 #include <csignal>
 #include <cstdint>
 #include <iomanip>
@@ -10,12 +11,11 @@
 #include <Helium/chemist/molecule.h>
 #include <Helium/chemist/smiles.h>
 #include <Helium/chemist/smirks.h>
-#include <gflags/gflags.h>
 #include "lmdb++.h"
 
-DECLARE_bool(verbose);
-
 namespace chemstgen {
+
+  bool verbose = false;  // verbose output
 
   volatile std::sig_atomic_t signal_raised = 0;
 
@@ -68,7 +68,7 @@ namespace chemstgen {
         main_smirks_str_ = match[3];
         if (match[5].matched) repldict_str_ = match[5];
 
-        if (FLAGS_verbose) {
+        if (verbose) {
 #pragma omp critical
           cout << id_ << '\n' << main_smirks_str_ << endl;
         }
@@ -76,7 +76,7 @@ namespace chemstgen {
         // init main smirks
         Helium::Chemist::Smirks main_smirks;
         if (!main_smirks.init(main_smirks_str_)) {
-          if (FLAGS_verbose) {
+          if (verbose) {
             cerr << "error: cannot read smirks: " << main_smirks_str_ << endl;
           }
           return false;
@@ -102,13 +102,13 @@ namespace chemstgen {
           auto dict_end = sregex_token_iterator();
           for (auto di = dict_begin; di != dict_end; ++di) {
             std::string dict = pfx + string(*di);
-            if (FLAGS_verbose) {
+            if (verbose) {
 #pragma omp critical
               cout << "  " << dict << endl;
             }
             Helium::Chemist::Smirks smirks;
             if (!smirks.init(dict)) {
-              if (FLAGS_verbose) {
+              if (verbose) {
 #pragma omp critical
                 cerr << "error: cannot read smirks: " << dict << endl;
               }
@@ -119,7 +119,7 @@ namespace chemstgen {
           repldict_.emplace_back(dictvec);
         }
 
-        if (FLAGS_verbose)
+        if (verbose)
 #pragma omp critical
         {
           for (int i = 0; i < repldict_.size(); ++i) {
@@ -175,7 +175,7 @@ namespace chemstgen {
           }
           Helium::Chemist::Smiles SMILES;
           if (!SMILES.read(multi_smiles, multi_mol_)) {
-            if (FLAGS_verbose) {
+            if (verbose) {
 #pragma omp critical
               cerr << "error: cannot read smiles: " << key_ << endl;
             }
@@ -215,3 +215,5 @@ namespace chemstgen {
   }
 
 }  // namespace chemstgen
+
+#endif  // CHEMSTGEN_H__
