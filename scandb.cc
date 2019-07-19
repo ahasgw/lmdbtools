@@ -12,23 +12,23 @@ int main(int argc, char *argv[]) {
   using namespace std;
 
   bool withkey = true;  // dump with hash key
-  bool valuekey = false;  // dump database value-key order in a row
+  bool valkeyorder = false;  // dump database value-key order
   string separator = "\t";  // field separator
 
   string progname = basename(argv[0]);
   string usage = "usage: " + progname +
-    " [options] <dbname> <idfile> ...\n"
+    " [options] <dbname> <keyfile> ...\n"
     "options: -k           dump with hash key\n"
-    "         -t           dump database in value-key order\n"
+    "         -r           dump database in value-key reverse order\n"
     "         -s <string>  field separator\n"
     ;
   for (opterr = 0;;) {
-    int opt = getopt(argc, argv, ":kts:");
+    int opt = getopt(argc, argv, ":krs:");
     if (opt == -1) break;
     try {
       switch (opt) {
         case 'k': { withkey = true; break; }
-        case 't': { valuekey = true; break; }
+        case 'r': { valkeyorder = true; break; }
         case 's': { separator = optarg; break; }
         case ':': { cout << "missing argument of -"
                     << static_cast<char>(optopt) << endl;
@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
     auto dbi    = lmdb::dbi::open(rtxn);
 
     string linefmt = (withkey
-        ? (valuekey ? "{2}{1}{0}\n" : "{0}{1}{2}\n")
+        ? (valkeyorder ? "{2}{1}{0}\n" : "{0}{1}{2}\n")
         : "{2}\n");
 
     for (int i = oi; i < argc; ++i) {
@@ -75,9 +75,9 @@ int main(int argc, char *argv[]) {
         lmdb::val v;
         if (dbi.get(rtxn, k, v)) {
           const string value(v.data(), v.size());
-          if (withkey && valuekey) {
+          if (withkey && valkeyorder) {
             cout << value << separator << key << '\n';
-          } else if (withkey && !valuekey) {
+          } else if (withkey && !valkeyorder) {
             cout << key << separator << value << '\n';
           } else {
             cout << value << '\n';

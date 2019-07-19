@@ -7,15 +7,15 @@
 #include <regex>
 #include <string>
 #include "lmdb++.h"
-#include "chemstgen.h"
+#include "common.h"
 
 int main(int argc, char *argv[]) {
   using namespace std;
-  using namespace chemstgen;
 
   string pattern = "";  // regular expression pattern
   bool overwrite = false;  // overwrite new value for a duplicate key
   uint64_t mapsize = 1000000;  // lmdb map size in MiB
+  bool verbose = false;  // verbose output
 
   string progname = basename(argv[0]);
   string usage = "usage: " + progname +
@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
         case 'p': { pattern = optarg; break; }
         case 'o': { overwrite = true; break; }
         case 'm': { mapsize = stoul(optarg); break; }
-        case 'v': {verbose = true; break; }
+        case 'v': { verbose = true; break; }
         case ':': { cout << "missing argument of -"
                     << static_cast<char>(optopt) << endl;
                     exit(EXIT_FAILURE);

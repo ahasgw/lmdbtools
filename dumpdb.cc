@@ -12,8 +12,8 @@ int main(int argc, char *argv[]) {
   using namespace std;
 
   bool stat = false;  // dump database statistics only
-  bool key = true;  // dump with hash key
-  bool valuekey = false;  // dump database in value-key order
+  bool withkey = true;  // dump with hash key
+  bool valkeyorder = false;  // dump database in value-key order
   string separator = "\t";  // field separator
   string pattern = "";  // regular expression pattern
 
@@ -21,19 +21,19 @@ int main(int argc, char *argv[]) {
   string usage = "usage: " + progname +
     " [options] <dbname> ...\n"
     "options: -n          dump database statistics only\n"
-    "         -K          dump without hash key\n"
+    "         -K          dump values only without keys\n"
     "         -r          dump database in value-key reverse order\n"
     "         -s <str>    field separator (" + separator + ")\n"
-    "         -p <regex>  refular expression pattern\n"
+    "         -p <regex>  regular expression pattern\n"
     ;
   for (opterr = 0;;) {
-    int opt = getopt(argc, argv, ":nKrs:p");
+    int opt = getopt(argc, argv, ":nKrs:p:");
     if (opt == -1) break;
     try {
       switch (opt) {
         case 'n': { stat = true; break; }
-        case 'K': { key = false; break; }
-        case 'r': { valuekey = true; break; }
+        case 'K': { withkey = false; break; }
+        case 'r': { valkeyorder = true; break; }
         case 's': { separator = optarg; break; }
         case 'p': { pattern = optarg; break; }
         case ':': { cout << "missing argument of -"
@@ -74,11 +74,11 @@ int main(int argc, char *argv[]) {
         auto cursor = lmdb::cursor::open(rtxn, dbi);
         string k, v;
         if (pattern.empty()) {
-          if (key && valuekey) {
+          if (withkey && valkeyorder) {
             while (cursor.get(k, v, MDB_NEXT)) {
               cout << v << separator << k << '\n';
             }
-          } else if (key && !valuekey) {
+          } else if (withkey && !valkeyorder) {
             while (cursor.get(k, v, MDB_NEXT)) {
               cout << k << separator << v << '\n';
             }
@@ -88,22 +88,22 @@ int main(int argc, char *argv[]) {
             }
           }
         } else {
-          const regex pattern(pattern);
-          if (key && valuekey) {
+          const regex pat(pattern);
+          if (withkey && valkeyorder) {
             while (cursor.get(k, v, MDB_NEXT)) {
-              if (regex_search(k, pattern)) {
+              if (regex_search(k, pat)) {
                 cout << v << separator << k << '\n';
               }
             }
-          } else if (key && !valuekey) {
+          } else if (withkey && !valkeyorder) {
             while (cursor.get(k, v, MDB_NEXT)) {
-              if (regex_search(k, pattern)) {
+              if (regex_search(k, pat)) {
                 cout << k << separator << v << '\n';
               }
             }
           } else {
             while (cursor.get(k, v, MDB_NEXT)) {
-              if (regex_search(k, pattern)) {
+              if (regex_search(k, pat)) {
                 cout << v << '\n';
               }
             }

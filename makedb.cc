@@ -6,26 +6,32 @@
 #include <fstream>
 #include <iostream>
 #include <regex>
-#include <sstream>
 #include <string>
 #include "lmdb++.h"
+#include "common.h"
 
 int main(int argc, char *argv[]) {
   using namespace std;
 
-  uint64_t mapsize = 1000000;  // lmdb map size in MiB
+  bool overwrite = false;  // overwrite new value for a duplicate key
+  uint64_t mapsize = 10000;  // lmdb map size in MiB
+  bool verbose = false;  // verbose output
 
   string progname = basename(argv[0]);
   string usage = "usage: " + progname +
-    " [options] <dbname> <edgefile> ...\n"
-    "options: -m <size>  lmdb map size in MiB (" + to_string(mapsize) + ")\n"
+    " [options] <odbname> <itxtfile>\n"
+    "options: -o         overwrite new value for a duplicate key\n"
+    "         -m <size>  lmdb map size in MiB (" + to_string(mapsize) + ")\n"
+    "         -v         verbose output\n"
     ;
   for (opterr = 0;;) {
-    int opt = getopt(argc, argv, ":m");
+    int opt = getopt(argc, argv, ":om:v");
     if (opt == -1) break;
     try {
       switch (opt) {
+        case 'o': { overwrite = true; break; }
         case 'm': { mapsize = stoul(optarg); break; }
+        case 'v': { verbose = true; break; }
         case ':': { cout << "missing argument of -"
                     << static_cast<char>(optopt) << endl;
                     exit(EXIT_FAILURE);
@@ -38,7 +44,7 @@ int main(int argc, char *argv[]) {
       }
     }
     catch (...) {
-      cout << "invalid arguments: " << argv[optind - 1] << endl;
+      cout << "invalid argument: " << argv[optind - 1] << endl;
       exit(EXIT_FAILURE);
     }
   }
@@ -48,7 +54,10 @@ int main(int argc, char *argv[]) {
   }
 
   int oi = optind;
-  string odbfname(argv[oi++]);
+  string odbfname (argv[oi++]);
+  string itxtfname(argv[oi++]);
+
+  const unsigned int put_flags = (overwrite ? 0 : MDB_NOOVERWRITE);
 
   try {
     auto env = lmdb::env::create();
@@ -58,34 +67,16 @@ int main(int argc, char *argv[]) {
     auto wtxn = lmdb::txn::begin(env);
     auto dbi  = lmdb::dbi::open(wtxn);
 
-    // reactanthash.tfmid producthash ...
-    const regex pattern(R"(^(\S+)\.(\d+)\s(.*)$)");
     smatch match;
-    for (int i = oi; i < argc; ++i) {
-      ifstream ifs(argv[i]);
-
-      for (string line; getline(ifs, line);) {
-        if (regex_match(line, match, pattern)) {
-          const string &reacthash  = match[1];  // reactanthash
-          const string &tfmid      = match[2];  // tfmid
-          const string &prodhashes = match[3];  // producthash list
-          const string val = reacthash + '.' + tfmid;
-
-          istringstream iss(prodhashes);
-          for (string key; iss >> key; ) {
-            lmdb::val k{key.data(), key.size()};
-            lmdb::val oldv;
-            if (dbi.get(wtxn, k, oldv)) { // found
-              string value(oldv.data(), oldv.size());
-              const string::size_type n = value.find(val);
-              if (n == string::npos) { // not already registered
-                value += ' ' + val;
-                dbi.put(wtxn, key.c_str(), value.c_str()); // OVERWRITE
-              }
-            }
-            else { // not found
-              dbi.put(wtxn, key.c_str(), val.c_str()); // OVERWRITE
-            }
+    ifstream ifs(itxtfname);
+    const regex pattern(R"(^(\S+)\s(\S*)(\s+(.*?)\s*)?$)");
+    for (string line; getline(ifs, line);) {
+      if (regex_match(line, match, pattern)) {
+        const string &key = match[1];
+        const string &val = match[2];
+        if (!dbi.put(wtxn, key.c_str(), val.c_str(), put_flags)) {
+          if (verbose) {
+            check_duplicates(dbi, wtxn, key, val);
           }
         }
       }
@@ -96,7 +87,6 @@ int main(int argc, char *argv[]) {
     wtxn.commit();
   }
   catch (const lmdb::error &e) {
-    cout << flush;
     cerr << e.what() << endl;
     return EXIT_FAILURE;
   }
