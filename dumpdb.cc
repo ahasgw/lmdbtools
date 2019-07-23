@@ -1,11 +1,10 @@
-#include "config.h"
 #include <cerrno>
 #include <cstdlib>
-#include <libgen.h>
-#include <unistd.h>
 #include <iostream>
 #include <regex>
 #include <string>
+#include <libgen.h>
+#include <unistd.h>
 #include "lmdb++.h"
 
 int main(int argc, char *argv[]) {

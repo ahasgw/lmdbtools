@@ -1,14 +1,14 @@
 CXX		?= g++
-CXXFLAGS	?= -g -std=c++14 -fopenmp -Ofast -DNDEBUG -Werror
+CXXFLAGS	?= -g -std=c++14 -Ofast -DNDEBUG -Werror -Wextra
 CPPFLAGS	?=
-LDFLAGS		?= -fopenmp
+LDFLAGS		?=
 CC		= $(CXX)
 
 LIBLMDB		?= -llmdb
 
 SOURCES = Makefile \
 	  adddb.cc dumpdb.cc makedb.cc scandb.cc subtrdb.cc \
-	  lmdb++.h config.h
+	  lmdb++.h
 
 SRCS = $(filter %.cc,$(SOURCES))
 HDRS = $(filter %.hh,$(SOURCES)) $(filter %.h,$(SOURCES))
@@ -26,7 +26,7 @@ scandb:		$(LIBLMDB)
 subtrdb:	$(LIBLMDB)
 
 depend: .depend
-.depend: $(SRCS) config.h
+.depend: $(SRCS)
 	$(RM) $@
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(TARGET_ARCH) -MM $^ > $@
 include .depend

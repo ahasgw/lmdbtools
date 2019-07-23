@@ -1,10 +1,9 @@
-#include "config.h"
 #include <cerrno>
 #include <cstdlib>
 #include <iostream>
+#include <string>
 #include <libgen.h>
 #include <unistd.h>
-#include <string>
 #include "lmdb++.h"
 
 int main(int argc, char *argv[]) {
