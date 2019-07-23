@@ -14,24 +14,27 @@ int main(int argc, char *argv[]) {
 
   string pattern = "";  // regular expression pattern
   bool overwrite = false;  // overwrite new value for a duplicate key
+  bool deleteval = false;  // delete value
   uint64_t mapsize = 1000000;  // lmdb map size in MiB
   bool verbose = false;  // verbose output
 
   string progname = basename(argv[0]);
   string usage = "usage: " + progname +
-    " [options] <destdb> <dbname0> <dbname1> ...\n"
+    " [options] <destdb> [<dbname> ...]\n"
     "options: -p <string>  regular expression pattern for key\n"
     "         -o           overwrite new value for a duplicate key\n"
+    "         -D           delete value\n"
     "         -m <size>    lmdb map size in MiB (" + to_string(mapsize) + ")\n"
     "         -v           verbose output\n"
     ;
   for (opterr = 0;;) {
-    int opt = getopt(argc, argv, ":p:om:v");
+    int opt = getopt(argc, argv, ":p:oDm:v");
     if (opt == -1) break;
     try {
       switch (opt) {
         case 'p': { pattern = optarg; break; }
         case 'o': { overwrite = true; break; }
+        case 'D': { deleteval = true; break; }
         case 'm': { mapsize = stoul(optarg); break; }
         case 'v': { verbose = true; break; }
         case ':': { cout << "missing argument of -"
@@ -50,7 +53,7 @@ int main(int argc, char *argv[]) {
       exit(EXIT_FAILURE);
     }
   }
-  if (argc - optind < 3) {
+  if (argc - optind < 1) {
     cout << "too few arguments\n" << usage << flush;
     exit(EXIT_FAILURE);
   }
@@ -68,7 +71,14 @@ int main(int argc, char *argv[]) {
     auto wtxn0 = lmdb::txn::begin(env0, nullptr);
     auto dbi0  = lmdb::dbi::open(wtxn0);
 
+    if (verbose) {
+      cout << odbfname << endl;
+    }
+
     for (int i = oi; i < argc; ++i) {
+      if (verbose) {
+        cout << "+ " << argv[i] << endl;
+      }
       auto env = lmdb::env::create();
       env.set_mapsize(mapsize * 1024UL * 1024UL);
       env.open(argv[i], MDB_NOSUBDIR | MDB_NOLOCK | MDB_RDONLY);
@@ -77,22 +87,45 @@ int main(int argc, char *argv[]) {
       auto dbi    = lmdb::dbi::open(rtxn);
 
       auto cursor = lmdb::cursor::open(rtxn, dbi);
-      string key, val;
-      if (pattern.empty()) {
-        while (cursor.get(key, val, MDB_NEXT)) {
-          if (!dbi0.put(wtxn0, key.c_str(), val.c_str(), put_flags)) {
-            if (verbose) {
-              check_duplicates(dbi0, wtxn0, key, val);
+      lmdb::val key;
+      lmdb::val val;
+
+      if (deleteval) {
+        lmdb::val empty("");
+        if (pattern.empty()) {
+          while (cursor.get(key, val, MDB_NEXT)) {
+            dbi0.put(wtxn0, key, empty);
+          }
+        } else {
+          const regex pat(pattern);
+          while (cursor.get(key, val, MDB_NEXT)) {
+            string keystr(key.data(), key.size());
+            if (regex_search(keystr, pat)) {
+              dbi0.put(wtxn0, key, empty);
             }
           }
         }
       } else {
-        const regex pattern(pattern);
-        while (cursor.get(key, val, MDB_NEXT)) {
-          if (regex_search(key, pattern)) {
-            if (!dbi0.put(wtxn0, key.c_str(), val.c_str(), put_flags)) {
+        if (pattern.empty()) {
+          while (cursor.get(key, val, MDB_NEXT)) {
+            if (!dbi0.put(wtxn0, key, val, put_flags)) {
               if (verbose) {
-                check_duplicates(dbi0, wtxn0, key, val);
+                check_duplicates(dbi0, wtxn0,
+                    string(key.data(), key.size()),
+                    string(val.data(), val.size()));
+              }
+            }
+          }
+        } else {
+          const regex pat(pattern);
+          while (cursor.get(key, val, MDB_NEXT)) {
+            string keystr(key.data(), key.size());
+            if (regex_search(keystr, pat)) {
+              if (!dbi0.put(wtxn0, key, val, put_flags)) {
+                if (verbose) {
+                  check_duplicates(dbi0, wtxn0, keystr,
+                      string(val.data(), val.size()));
+                }
               }
             }
           }
