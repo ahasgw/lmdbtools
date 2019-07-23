@@ -8,7 +8,6 @@
 #include <regex>
 #include <string>
 #include "lmdb++.h"
-#include "common.h"
 
 int main(int argc, char *argv[]) {
   using namespace std;
@@ -81,11 +80,13 @@ int main(int argc, char *argv[]) {
       ifstream ifs(itxtfname);
       for (string line; getline(ifs, line);) {
         if (regex_match(line, match, pattern)) {
-          const string &key = match[1];
-          const string &val = match[2];
-          if (!dbi.put(wtxn, key.c_str(), val.c_str(), put_flags)) {
+          const string &keystr = match[1];
+          const string &valstr = match[2];
+          const lmdb::val key(keystr);
+          /* no const */ lmdb::val val(valstr);
+          if (!dbi.put(wtxn, key, val, put_flags)) {
             if (verbose > 1) {
-              check_duplicates(dbi, wtxn, key, val);
+              cerr << "== " << keystr << endl;
             }
           }
         }

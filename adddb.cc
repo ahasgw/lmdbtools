@@ -7,7 +7,6 @@
 #include <regex>
 #include <string>
 #include "lmdb++.h"
-#include "common.h"
 
 int main(int argc, char *argv[]) {
   using namespace std;
@@ -110,9 +109,8 @@ int main(int argc, char *argv[]) {
           while (cursor.get(key, val, MDB_NEXT)) {
             if (!dbi0.put(wtxn0, key, val, put_flags)) {
               if (verbose > 1) {
-                check_duplicates(dbi0, wtxn0,
-                    string(key.data(), key.size()),
-                    string(val.data(), val.size()));
+                const string keystr(key.data(), key.size());
+                cerr << "== " << keystr << endl;
               }
             }
           }
@@ -123,8 +121,8 @@ int main(int argc, char *argv[]) {
             if (regex_search(keystr, pat)) {
               if (!dbi0.put(wtxn0, key, val, put_flags)) {
                 if (verbose > 1) {
-                  check_duplicates(dbi0, wtxn0, keystr,
-                      string(val.data(), val.size()));
+                  const string keystr(key.data(), key.size());
+                  cerr << "== " << keystr << endl;
                 }
               }
             }

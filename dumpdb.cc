@@ -78,39 +78,52 @@ int main(int argc, char *argv[]) {
         cout << argv[i] << separator << st.ms_entries << '\n';
       } else {
         auto cursor = lmdb::cursor::open(rtxn, dbi);
-        string k, v;
+        lmdb::val key;
+        lmdb::val val;
+
         if (pattern.empty()) {
           if (withkey && valkeyorder) {
-            while (cursor.get(k, v, MDB_NEXT)) {
-              cout << v << separator << k << '\n';
+            while (cursor.get(key, val, MDB_NEXT)) {
+              const string keystr(key.data(), key.size());
+              const string valstr(val.data(), val.size());
+              cout << valstr << separator << keystr << '\n';
             }
           } else if (withkey && !valkeyorder) {
-            while (cursor.get(k, v, MDB_NEXT)) {
-              cout << k << separator << v << '\n';
+            while (cursor.get(key, val, MDB_NEXT)) {
+              const string keystr(key.data(), key.size());
+              const string valstr(val.data(), val.size());
+              cout << keystr << separator << valstr << '\n';
             }
           } else {
-            while (cursor.get(k, v, MDB_NEXT)) {
-              cout << v << '\n';
+            while (cursor.get(key, val, MDB_NEXT)) {
+              const string valstr(val.data(), val.size());
+              cout << valstr << '\n';
             }
           }
         } else {
           const regex pat(pattern);
           if (withkey && valkeyorder) {
-            while (cursor.get(k, v, MDB_NEXT)) {
-              if (regex_search(k, pat)) {
-                cout << v << separator << k << '\n';
+            while (cursor.get(key, val, MDB_NEXT)) {
+              const string keystr(key.data(), key.size());
+              const string valstr(val.data(), val.size());
+              if (regex_search(keystr, pat)) {
+                cout << valstr << separator << keystr << '\n';
               }
             }
           } else if (withkey && !valkeyorder) {
-            while (cursor.get(k, v, MDB_NEXT)) {
-              if (regex_search(k, pat)) {
-                cout << k << separator << v << '\n';
+            while (cursor.get(key, val, MDB_NEXT)) {
+              const string keystr(key.data(), key.size());
+              const string valstr(val.data(), val.size());
+              if (regex_search(keystr, pat)) {
+                cout << keystr << separator << valstr << '\n';
               }
             }
           } else {
-            while (cursor.get(k, v, MDB_NEXT)) {
-              if (regex_search(k, pat)) {
-                cout << v << '\n';
+            while (cursor.get(key, val, MDB_NEXT)) {
+              const string keystr(key.data(), key.size());
+              const string valstr(val.data(), val.size());
+              if (regex_search(keystr, pat)) {
+                cout << valstr << '\n';
               }
             }
           }

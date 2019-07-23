@@ -8,7 +8,7 @@ LIBLMDB		?= -llmdb
 
 SOURCES = Makefile \
 	  adddb.cc dumpdb.cc makedb.cc scandb.cc subtrdb.cc \
-	  lmdb++.h common.h config.h
+	  lmdb++.h config.h
 
 SRCS = $(filter %.cc,$(SOURCES))
 HDRS = $(filter %.hh,$(SOURCES)) $(filter %.h,$(SOURCES))
