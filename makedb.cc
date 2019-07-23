@@ -13,21 +13,28 @@ int main(int argc, char *argv[]) {
 
   uint64_t mapsize = 10000;  // lmdb map size in MiB
   int verbose = 0;  // verbose output
+  string pattern = R"(^(\S+)\s(\S*))";  //R"(^(\S+)\s(\S*)(\s+(.*?)\s*)?$)"
   bool overwrite = false;  // overwrite new value for a duplicate key
+  bool deleteval = false;  // delete value
 
   string progname = basename(argv[0]);
   string usage = "usage: " + progname +
     " [options] <odbname> [<itxtfile> ...]\n"
-    "options: -o         overwrite new value for a duplicate key\n"
-    "         -m <size>  lmdb map size in MiB (" + to_string(mapsize) + ")\n"
-    "         -v         verbose output\n"
+    "options: -p <string>  regular expression pattern for key and value\n"
+    "                      default pattern is \"" + pattern + "\"\n"
+    "         -o           overwrite new value for a duplicate key\n"
+    "         -D           delete value\n"
+    "         -m <size>    lmdb map size in MiB (" + to_string(mapsize) + ")\n"
+    "         -v           verbose output\n"
     ;
   for (opterr = 0;;) {
-    int opt = getopt(argc, argv, ":om:v");
+    int opt = getopt(argc, argv, ":p:oDm:v");
     if (opt == -1) break;
     try {
       switch (opt) {
+        case 'p': { pattern = optarg; break; }
         case 'o': { overwrite = true; break; }
+        case 'D': { deleteval = true; break; }
         case 'm': { mapsize = stoul(optarg); break; }
         case 'v': { ++verbose; break; }
         case ':': { cout << "missing argument of -"
@@ -65,11 +72,12 @@ int main(int argc, char *argv[]) {
     auto dbi  = lmdb::dbi::open(wtxn);
 
     if (verbose > 0) {
+      cerr << "pattern: " << pattern << endl;
       cerr << odbfname << endl;
     }
 
     smatch match;
-    const regex pattern(R"(^(\S+)\s(\S*)(\s+(.*?)\s*)?$)");
+    regex pat(pattern);
 
     for (int i = oi; i < argc; ++i) {
       string itxtfname(argv[i]);
@@ -78,9 +86,12 @@ int main(int argc, char *argv[]) {
       }
       ifstream ifs(itxtfname);
       for (string line; getline(ifs, line);) {
-        if (regex_match(line, match, pattern)) {
-          const string &keystr = match[1];
-          const string &valstr = match[2];
+        if (regex_match(line, match, pat)) {
+          if (match.size() <= 1)
+            continue;
+          const string &keystr = (match.size() >= 2 ? match.str(1) : "");
+          const string &valstr = (match.size() >= 3 && !deleteval
+              ? match.str(2) : "");
           const lmdb::val key(keystr);
           /* no const */ lmdb::val val(valstr);
           if (!dbi.put(wtxn, key, val, put_flags)) {
@@ -98,6 +109,10 @@ int main(int argc, char *argv[]) {
   }
   catch (const lmdb::error &e) {
     cerr << e.what() << endl;
+    return EXIT_FAILURE;
+  }
+  catch (const regex_error &e) {
+    cerr << e.what() << ": pattern: " << pattern << endl;
     return EXIT_FAILURE;
   }
   return EXIT_SUCCESS;

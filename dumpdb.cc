@@ -20,11 +20,11 @@ int main(int argc, char *argv[]) {
   string progname = basename(argv[0]);
   string usage = "usage: " + progname +
     " [options] <dbname> ...\n"
-    "options: -n          dump database statistics only\n"
+    "options: -p <regex>  regular expression pattern for key\n"
+    "         -n          dump database statistics only\n"
     "         -K          dump values only without keys\n"
     "         -r          dump database in value-key reverse order\n"
     "         -s <str>    field separator (" + separator + ")\n"
-    "         -p <regex>  regular expression pattern\n"
     "         -v          verbose output\n"
     ;
   for (opterr = 0;;) {
@@ -32,11 +32,11 @@ int main(int argc, char *argv[]) {
     if (opt == -1) break;
     try {
       switch (opt) {
+        case 'p': { pattern = optarg; break; }
         case 'n': { stat = true; break; }
         case 'K': { withkey = false; break; }
         case 'r': { valkeyorder = true; break; }
         case 's': { separator = optarg; break; }
-        case 'p': { pattern = optarg; break; }
         case 'v': { ++verbose; break; }
         case ':': { cout << "missing argument of -"
                     << static_cast<char>(optopt) << endl;
