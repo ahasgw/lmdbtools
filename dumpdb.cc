@@ -11,11 +11,12 @@
 int main(int argc, char *argv[]) {
   using namespace std;
 
+  int verbose = 0;  // verbose output
+  string separator = "\t";  // field separator
+  string pattern = "";  // regular expression pattern
   bool stat = false;  // dump database statistics only
   bool withkey = true;  // dump with hash key
   bool valkeyorder = false;  // dump database in value-key order
-  string separator = "\t";  // field separator
-  string pattern = "";  // regular expression pattern
 
   string progname = basename(argv[0]);
   string usage = "usage: " + progname +
@@ -25,9 +26,10 @@ int main(int argc, char *argv[]) {
     "         -r          dump database in value-key reverse order\n"
     "         -s <str>    field separator (" + separator + ")\n"
     "         -p <regex>  regular expression pattern\n"
+    "         -v          verbose output\n"
     ;
   for (opterr = 0;;) {
-    int opt = getopt(argc, argv, ":nKrs:p:");
+    int opt = getopt(argc, argv, ":nKrs:p:v");
     if (opt == -1) break;
     try {
       switch (opt) {
@@ -36,6 +38,7 @@ int main(int argc, char *argv[]) {
         case 'r': { valkeyorder = true; break; }
         case 's': { separator = optarg; break; }
         case 'p': { pattern = optarg; break; }
+        case 'v': { ++verbose; break; }
         case ':': { cout << "missing argument of -"
                     << static_cast<char>(optopt) << endl;
                     exit(EXIT_FAILURE);
@@ -60,6 +63,9 @@ int main(int argc, char *argv[]) {
   cout.sync_with_stdio(false);
   try {
     for (int i = optind; i < argc; ++i) {
+      if (verbose > 0) {
+        cerr << argv[i] << endl;
+      }
       auto env = lmdb::env::create();
       env.set_mapsize(0);
       env.open(argv[i], MDB_NOSUBDIR | MDB_NOLOCK | MDB_RDONLY);

@@ -13,13 +13,13 @@
 int main(int argc, char *argv[]) {
   using namespace std;
 
-  bool overwrite = false;  // overwrite new value for a duplicate key
   uint64_t mapsize = 10000;  // lmdb map size in MiB
-  bool verbose = false;  // verbose output
+  int verbose = 0;  // verbose output
+  bool overwrite = false;  // overwrite new value for a duplicate key
 
   string progname = basename(argv[0]);
   string usage = "usage: " + progname +
-    " [options] <odbname> <itxtfile>\n"
+    " [options] <odbname> [<itxtfile> ...]\n"
     "options: -o         overwrite new value for a duplicate key\n"
     "         -m <size>  lmdb map size in MiB (" + to_string(mapsize) + ")\n"
     "         -v         verbose output\n"
@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
       switch (opt) {
         case 'o': { overwrite = true; break; }
         case 'm': { mapsize = stoul(optarg); break; }
-        case 'v': { verbose = true; break; }
+        case 'v': { ++verbose; break; }
         case ':': { cout << "missing argument of -"
                     << static_cast<char>(optopt) << endl;
                     exit(EXIT_FAILURE);
@@ -55,7 +55,6 @@ int main(int argc, char *argv[]) {
 
   int oi = optind;
   string odbfname (argv[oi++]);
-  string itxtfname(argv[oi++]);
 
   const unsigned int put_flags = (overwrite ? 0 : MDB_NOOVERWRITE);
 
@@ -67,16 +66,27 @@ int main(int argc, char *argv[]) {
     auto wtxn = lmdb::txn::begin(env);
     auto dbi  = lmdb::dbi::open(wtxn);
 
+    if (verbose > 0) {
+      cerr << odbfname << endl;
+    }
+
     smatch match;
-    ifstream ifs(itxtfname);
     const regex pattern(R"(^(\S+)\s(\S*)(\s+(.*?)\s*)?$)");
-    for (string line; getline(ifs, line);) {
-      if (regex_match(line, match, pattern)) {
-        const string &key = match[1];
-        const string &val = match[2];
-        if (!dbi.put(wtxn, key.c_str(), val.c_str(), put_flags)) {
-          if (verbose) {
-            check_duplicates(dbi, wtxn, key, val);
+
+    for (int i = oi; i < argc; ++i) {
+      string itxtfname(argv[i]);
+      if (verbose > 0) {
+        cerr << "+ " << itxtfname << endl;
+      }
+      ifstream ifs(itxtfname);
+      for (string line; getline(ifs, line);) {
+        if (regex_match(line, match, pattern)) {
+          const string &key = match[1];
+          const string &val = match[2];
+          if (!dbi.put(wtxn, key.c_str(), val.c_str(), put_flags)) {
+            if (verbose > 1) {
+              check_duplicates(dbi, wtxn, key, val);
+            }
           }
         }
       }

@@ -12,11 +12,11 @@
 int main(int argc, char *argv[]) {
   using namespace std;
 
+  uint64_t mapsize = 1000000;  // lmdb map size in MiB
+  int verbose = 0;  // verbose output
   string pattern = "";  // regular expression pattern
   bool overwrite = false;  // overwrite new value for a duplicate key
   bool deleteval = false;  // delete value
-  uint64_t mapsize = 1000000;  // lmdb map size in MiB
-  bool verbose = false;  // verbose output
 
   string progname = basename(argv[0]);
   string usage = "usage: " + progname +
@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
         case 'o': { overwrite = true; break; }
         case 'D': { deleteval = true; break; }
         case 'm': { mapsize = stoul(optarg); break; }
-        case 'v': { verbose = true; break; }
+        case 'v': { ++verbose; break; }
         case ':': { cout << "missing argument of -"
                     << static_cast<char>(optopt) << endl;
                     exit(EXIT_FAILURE);
@@ -71,13 +71,13 @@ int main(int argc, char *argv[]) {
     auto wtxn0 = lmdb::txn::begin(env0, nullptr);
     auto dbi0  = lmdb::dbi::open(wtxn0);
 
-    if (verbose) {
-      cout << odbfname << endl;
+    if (verbose > 0) {
+      cerr << odbfname << endl;
     }
 
     for (int i = oi; i < argc; ++i) {
-      if (verbose) {
-        cout << "+ " << argv[i] << endl;
+      if (verbose > 0) {
+        cerr << "+ " << argv[i] << endl;
       }
       auto env = lmdb::env::create();
       env.set_mapsize(mapsize * 1024UL * 1024UL);
@@ -109,7 +109,7 @@ int main(int argc, char *argv[]) {
         if (pattern.empty()) {
           while (cursor.get(key, val, MDB_NEXT)) {
             if (!dbi0.put(wtxn0, key, val, put_flags)) {
-              if (verbose) {
+              if (verbose > 1) {
                 check_duplicates(dbi0, wtxn0,
                     string(key.data(), key.size()),
                     string(val.data(), val.size()));
@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
             string keystr(key.data(), key.size());
             if (regex_search(keystr, pat)) {
               if (!dbi0.put(wtxn0, key, val, put_flags)) {
-                if (verbose) {
+                if (verbose > 1) {
                   check_duplicates(dbi0, wtxn0, keystr,
                       string(val.data(), val.size()));
                 }
@@ -134,6 +134,9 @@ int main(int argc, char *argv[]) {
       cursor.close();
       rtxn.abort();
     }
+
+    MDB_stat st = dbi0.stat(wtxn0);
+    cout << odbfname << '\t' << st.ms_entries << endl;
     wtxn0.commit();
   }
   catch (const lmdb::error &e) {

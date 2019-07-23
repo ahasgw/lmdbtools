@@ -10,22 +10,25 @@
 int main(int argc, char *argv[]) {
   using namespace std;
 
-  bool checkvaluetoo = false;  // check not only the key but also its value
   uint64_t mapsize = 1000000;  // lmdb map size in MiB
+  int verbose = 0;  // verbose output
+  bool checkvaluetoo = false;  // check not only the key but also its value
 
   string progname = basename(argv[0]);
   string usage = "usage: " + progname +
-    " [options] <targetdb> <dbname> ...\n"
+    " [options] <targetdb> [<dbname> ...]\n"
     "options: -x         check not only the key but also its value\n"
     "         -m <size>  lmdb map size in MiB (" + to_string(mapsize) + ")\n"
+    "         -v         verbose output\n"
     ;
   for (opterr = 0;;) {
-    int opt = getopt(argc, argv, ":xm:");
+    int opt = getopt(argc, argv, ":xm:v");
     if (opt == -1) break;
     try {
       switch (opt) {
         case 'x': { checkvaluetoo = true; break; }
         case 'm': { mapsize = stoul(optarg); break; }
+        case 'v': { ++verbose; break; }
         case ':': { cout << "missing argument of -"
                     << static_cast<char>(optopt) << endl;
                     exit(EXIT_FAILURE);
@@ -42,7 +45,7 @@ int main(int argc, char *argv[]) {
       exit(EXIT_FAILURE);
     }
   }
-  if (argc - optind < 2) {
+  if (argc - optind < 1) {
     cout << "too few arguments\n" << usage << flush;
     exit(EXIT_FAILURE);
   }
@@ -58,7 +61,14 @@ int main(int argc, char *argv[]) {
     auto wtxn0 = lmdb::txn::begin(env0, nullptr);
     auto dbi0  = lmdb::dbi::open(wtxn0);
 
+    if (verbose > 0) {
+      cerr << tdbfname << endl;
+    }
+
     for (int i = oi; i < argc; ++i) {
+      if (verbose > 0) {
+        cerr << "- " << argv[i] << endl;
+      }
       auto env = lmdb::env::create();
       env.set_mapsize(mapsize * 1024UL * 1024UL);
       env.open(argv[i], MDB_NOSUBDIR | MDB_NOLOCK | MDB_RDONLY);
@@ -88,6 +98,9 @@ int main(int argc, char *argv[]) {
       cursor.close();
       rtxn.abort();
     }
+
+    MDB_stat st = dbi0.stat(wtxn0);
+    cout << tdbfname << '\t' << st.ms_entries << endl;
     wtxn0.commit();
   }
   catch (const lmdb::error &e) {

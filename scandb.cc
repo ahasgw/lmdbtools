@@ -11,25 +11,28 @@
 int main(int argc, char *argv[]) {
   using namespace std;
 
-  bool withkey = true;  // dump with hash key
-  bool valkeyorder = false;  // dump database value-key order
+  int verbose = 0;  // verbose output
   string separator = "\t";  // field separator
+  bool withkey = true;  // dump with key
+  bool valkeyorder = false;  // dump database value-key order
 
   string progname = basename(argv[0]);
   string usage = "usage: " + progname +
-    " [options] <dbname> <keyfile> ...\n"
-    "options: -k           dump with hash key\n"
+    " [options] <dbname> [<keyfile> ...]\n"
+    "options: -k           dump with key\n"
     "         -r           dump database in value-key reverse order\n"
     "         -s <string>  field separator\n"
+    "         -v           verbose output\n"
     ;
   for (opterr = 0;;) {
-    int opt = getopt(argc, argv, ":krs:");
+    int opt = getopt(argc, argv, ":krs:v");
     if (opt == -1) break;
     try {
       switch (opt) {
         case 'k': { withkey = true; break; }
         case 'r': { valkeyorder = true; break; }
         case 's': { separator = optarg; break; }
+        case 'v': { ++verbose; break; }
         case ':': { cout << "missing argument of -"
                     << static_cast<char>(optopt) << endl;
                     exit(EXIT_FAILURE);
@@ -46,7 +49,7 @@ int main(int argc, char *argv[]) {
       exit(EXIT_FAILURE);
     }
   }
-  if (argc - optind < 2) {
+  if (argc - optind < 1) {
     cout << "too few arguments\n" << usage << flush;
     exit(EXIT_FAILURE);
   }
@@ -57,6 +60,9 @@ int main(int argc, char *argv[]) {
   cout.sync_with_stdio(false);
 
   try {
+    if (verbose > 0) {
+      cerr << idbfname << endl;
+    }
     auto env = lmdb::env::create();
     env.set_mapsize(0);
     env.open(idbfname.c_str(), MDB_NOSUBDIR | MDB_NOLOCK | MDB_RDONLY);
@@ -69,6 +75,9 @@ int main(int argc, char *argv[]) {
         : "{2}\n");
 
     for (int i = oi; i < argc; ++i) {
+      if (verbose > 1) {
+        cerr << "? " << argv[i] << endl;
+      }
       ifstream ifs(argv[i]);
       for (string key; ifs >> key;) {
         lmdb::val k{key.data(), key.size()};
