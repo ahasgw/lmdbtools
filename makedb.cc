@@ -11,7 +11,8 @@
 int main(int argc, char *argv[]) {
   using namespace std;
 
-  uint64_t mapsize = 10000;  // lmdb map size in MiB
+  uint64_t mapsize = 1024UL * 1024UL;  // lmdb map size in MiB
+  uint64_t chunksize = 0;  // commit chunk size; 0: disable
   int verbose = 0;  // verbose output
   string pattern = R"(^(\S+)\s(\S*))";  //R"(^(\S+)\s(\S*)(\s+(.*?)\s*)?$)"
   bool overwrite = false;  // overwrite new value for a duplicate key
@@ -25,10 +26,11 @@ int main(int argc, char *argv[]) {
     "         -o           overwrite new value for a duplicate key\n"
     "         -D           delete value\n"
     "         -m <size>    lmdb map size in MiB (" + to_string(mapsize) + ")\n"
+    "         -n <size>    commit chunk size (default 0:disable)\n"
     "         -v           verbose output\n"
     ;
   for (opterr = 0;;) {
-    int opt = getopt(argc, argv, ":p:oDm:v");
+    int opt = getopt(argc, argv, ":p:oDm:n:v");
     if (opt == -1) break;
     try {
       switch (opt) {
@@ -36,6 +38,7 @@ int main(int argc, char *argv[]) {
         case 'o': { overwrite = true; break; }
         case 'D': { deleteval = true; break; }
         case 'm': { mapsize = stoul(optarg); break; }
+        case 'n': { chunksize = stoul(optarg); break; }
         case 'v': { ++verbose; break; }
         case ':': { cout << "missing argument of -"
                     << static_cast<char>(optopt) << endl;
@@ -68,16 +71,17 @@ int main(int argc, char *argv[]) {
     env.set_mapsize(mapsize * 1024UL * 1024UL);
     env.open(odbfname.c_str(), MDB_NOSUBDIR | MDB_NOLOCK);
 
-    auto wtxn = lmdb::txn::begin(env);
-    auto dbi  = lmdb::dbi::open(wtxn);
-
     if (verbose > 0) {
       cerr << "pattern: " << pattern << endl;
       cerr << odbfname << endl;
     }
 
+    uint64_t cnt = 0;
     smatch match;
     regex pat(pattern);
+
+    auto wtxn = lmdb::txn::begin(env);
+    auto dbi  = lmdb::dbi::open(wtxn);
 
     for (int i = oi; i < argc; ++i) {
       string itxtfname(argv[i]);
@@ -97,6 +101,18 @@ int main(int argc, char *argv[]) {
           if (!dbi.put(wtxn, key, val, put_flags)) {
             if (verbose > 1) {
               cerr << "== " << keystr << endl;
+            }
+          }
+          else {
+            if (chunksize > 0 && ++cnt >= chunksize) {
+              // commit and reopen transaction
+              if (verbose > 2) {
+                cerr << "commit " << cnt << endl;
+              }
+              wtxn.commit();
+              wtxn = lmdb::txn::begin(env);
+              dbi  = lmdb::dbi::open(wtxn);
+              cnt = 0;
             }
           }
         }
