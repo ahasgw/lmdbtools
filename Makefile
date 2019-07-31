@@ -7,13 +7,13 @@ CC		= $(CXX)
 LIBLMDB		?= -llmdb
 
 SOURCES = Makefile \
-	  adddb.cc dumpdb.cc makedb.cc scandb.cc subtrdb.cc \
+	  adddb.cc dumpdb.cc makedb.cc mergedb.cc scandb.cc subtrdb.cc \
 	  lmdb++.h
 
 SRCS = $(filter %.cc,$(SOURCES))
 HDRS = $(filter %.hh,$(SOURCES)) $(filter %.h,$(SOURCES))
 OBJS = $(SRCS:.cc=.o)
-EXES = adddb dumpdb makedb scandb subtrdb
+EXES = adddb dumpdb makedb mergedb scandb subtrdb
 
 .PHONY: all depend clean
 
@@ -22,6 +22,7 @@ all: $(EXES) depend
 adddb:		$(LIBLMDB)
 dumpdb:		$(LIBLMDB)
 makedb:		$(LIBLMDB)
+mergedb:	$(LIBLMDB)
 scandb:		$(LIBLMDB)
 subtrdb:	$(LIBLMDB)
 

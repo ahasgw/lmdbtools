@@ -10,5 +10,6 @@
 adddb
 dumpdb
 makedb
+mergedb
 scandb
 subtrdb
