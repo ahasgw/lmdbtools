@@ -14,7 +14,7 @@ int main(int argc, char *argv[]) {
   uint64_t mapsize = 1024UL * 1024UL;  // lmdb map size in MiB
   uint64_t chunksize = 0;  // commit chunk size; 0: disable
   int verbose = 0;  // verbose output
-  string pattern = R"(^(\S+)\s(\S*))";  //R"(^(\S+)\s(\S*)(\s+(.*?)\s*)?$)"
+  string pattern = R"(^(\S+)\s(\S*).*)";  //R"(^(\S+)\s(\S*)(\s+(.*?)\s*)?$)"
   bool overwrite = false;  // overwrite new value for a duplicate key
   bool deleteval = false;  // delete value
 
