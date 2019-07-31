@@ -139,9 +139,12 @@ int main(int argc, char *argv[]) {
           //cout << "write 2 " << key2str << endl;
         }
         else /* if (cmp == 0) */ {
-          string newvalstr(val1.data(), val1.size());
-          newvalstr += delimiter;
-          newvalstr += string(val2.data(), val2.size());
+          const string val1str(val1.data(), val1.size());
+          const string val2str(val2.data(), val2.size());
+          string newvalstr;
+          newvalstr += val1str;
+          newvalstr += (!val1str.empty() && !val2str.empty()) ? delimiter : "";
+          newvalstr += val2str;
           lmdb::val newval(newvalstr);
 
           dbi0.put(wtxn0, key1, newval);
