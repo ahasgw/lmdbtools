@@ -9,7 +9,7 @@
 int main(int argc, char *argv[]) {
   using namespace std;
 
-  uint64_t mapsize = 1000000;  // lmdb map size in MiB
+  uint64_t mapsize = 1024UL * 1024UL;  // lmdb map size in MiB
   int verbose = 0;  // verbose output
   bool checkvaluetoo = false;  // check not only the key but also its value
 
