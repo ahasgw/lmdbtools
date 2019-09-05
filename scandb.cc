@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <regex>
 #include <string>
 #include <libgen.h>
 #include <unistd.h>
@@ -12,22 +13,26 @@ int main(int argc, char *argv[]) {
 
   int verbose = 0;  // verbose output
   string separator = "\t";  // field separator
+  string pattern = R"(^(\S+).*)";
   bool withkey = true;  // dump with key
   bool valkeyorder = false;  // dump database value-key order
 
   string progname = basename(argv[0]);
   string usage = "usage: " + progname +
     " [options] <dbname> [<keyfile> ...]\n"
-    "options: -k           dump with key\n"
+    "options: -p           regular expression pattern for key\n"
+    "                      default pattern is \"" + pattern + "\"\n"
+    "         -k           dump with key\n"
     "         -r           dump database in value-key reverse order\n"
     "         -s <string>  field separator\n"
     "         -v           verbose output\n"
     ;
   for (opterr = 0;;) {
-    int opt = getopt(argc, argv, ":krs:v");
+    int opt = getopt(argc, argv, ":p:krs:v");
     if (opt == -1) break;
     try {
       switch (opt) {
+        case 'p': { pattern = optarg; break; }
         case 'k': { withkey = true; break; }
         case 'r': { valkeyorder = true; break; }
         case 's': { separator = optarg; break; }
@@ -60,6 +65,7 @@ int main(int argc, char *argv[]) {
 
   try {
     if (verbose > 0) {
+      cerr << "pattern: " << pattern << endl;
       cerr << idbfname << endl;
     }
     auto env = lmdb::env::create();
@@ -73,22 +79,30 @@ int main(int argc, char *argv[]) {
         ? (valkeyorder ? "{2}{1}{0}\n" : "{0}{1}{2}\n")
         : "{2}\n");
 
+    smatch match;
+    regex pat(pattern);
+
     for (int i = oi; i < argc; ++i) {
       if (verbose > 1) {
         cerr << "? " << argv[i] << endl;
       }
       ifstream ifs(argv[i]);
-      for (string key; ifs >> key;) {
-        lmdb::val k{key.data(), key.size()};
-        lmdb::val v;
-        if (dbi.get(rtxn, k, v)) {
-          const string value(v.data(), v.size());
-          if (withkey && valkeyorder) {
-            cout << value << separator << key << '\n';
-          } else if (withkey && !valkeyorder) {
-            cout << key << separator << value << '\n';
-          } else {
-            cout << value << '\n';
+      for (string line; getline(ifs, line);) {
+        if (regex_match(line, match, pat)) {
+          if (match.size() <= 1)
+            continue;
+          const string &key = (match.size() >= 1 ? match.str(1) : "");
+          const lmdb::val k{key.data(), key.size()};
+          lmdb::val v;
+          if (dbi.get(rtxn, k, v)) {
+            const string value(v.data(), v.size());
+            if (withkey && valkeyorder) {
+              cout << value << separator << key << '\n';
+            } else if (withkey && !valkeyorder) {
+              cout << key << separator << value << '\n';
+            } else {
+              cout << value << '\n';
+            }
           }
         }
       }
@@ -98,6 +112,10 @@ int main(int argc, char *argv[]) {
   catch (const lmdb::error &e) {
     cout << flush;
     cerr << e.what() << endl;
+    return EXIT_FAILURE;
+  }
+  catch (const regex_error &e) {
+    cerr << e.what() << ": pattern: " << pattern << endl;
     return EXIT_FAILURE;
   }
   return EXIT_SUCCESS;
