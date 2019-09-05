@@ -18,7 +18,7 @@ int main(int argc, char *argv[]) {
 
   string progname = basename(argv[0]);
   string usage = "usage: " + progname +
-    " [options] <destdb> [<dbname> ...]\n"
+    " [options] <targetdb> [<dbname> ...]\n"
     "options: -p <string>  regular expression pattern for key\n"
     "         -o           overwrite new value for a duplicate key\n"
     "         -D           delete value\n"

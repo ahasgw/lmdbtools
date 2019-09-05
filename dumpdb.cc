@@ -19,12 +19,12 @@ int main(int argc, char *argv[]) {
 
   string progname = basename(argv[0]);
   string usage = "usage: " + progname +
-    " [options] <dbname> ...\n"
+    " [options] <dbname> [...]\n"
     "options: -p <regex>  regular expression pattern for key\n"
     "         -n          dump database statistics only\n"
     "         -K          dump values only without keys\n"
     "         -r          dump database in value-key reverse order\n"
-    "         -s <str>    field separator (" + separator + ")\n"
+    "         -s <str>    field separator\n"
     "         -v          verbose output\n"
     ;
   for (opterr = 0;;) {

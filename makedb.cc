@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
 
   string progname = basename(argv[0]);
   string usage = "usage: " + progname +
-    " [options] <odbname> [<itxtfile> ...]\n"
+    " [options] <targetdb> [<keyvaluefile> ...]\n"
     "options: -p <string>  regular expression pattern for key and value\n"
     "                      default pattern is \"" + pattern + "\"\n"
     "         -o           overwrite new value for a duplicate key\n"

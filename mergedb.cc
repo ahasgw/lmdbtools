@@ -11,23 +11,23 @@ int main(int argc, char *argv[]) {
 
   uint64_t mapsize = 1024UL * 1024UL;  // lmdb map size in MiB
   int verbose = 0;  // verbose output
-  string delimiter = ",";  // delimiter of values
+  string separator = ",";  // separator of values
   bool overwrite = false;  // overwrite new value for a duplicate key
   bool deleteval = false;  // delete value
 
   string progname = basename(argv[0]);
   string usage = "usage: " + progname +
-    " [options] <odbname> <dbname1> <dbname2>\n"
-    "options: -d <string>  delimiter of values\n"
+    " [options] <targetdb> <dbname1> <dbname2>\n"
+    "options: -s <string>  separator of values (" + separator + ")\n"
     "         -m <size>    lmdb map size in MiB (" + to_string(mapsize) + ")\n"
     "         -v           verbose output\n"
     ;
   for (opterr = 0;;) {
-    int opt = getopt(argc, argv, ":d:m:v");
+    int opt = getopt(argc, argv, ":s:m:v");
     if (opt == -1) break;
     try {
       switch (opt) {
-        case 'd': { delimiter = optarg; break; }
+        case 's': { separator = optarg; break; }
         case 'm': { mapsize = stoul(optarg); break; }
         case 'v': { ++verbose; break; }
         case ':': { cout << "missing argument of -"
@@ -143,7 +143,7 @@ int main(int argc, char *argv[]) {
           const string val2str(val2.data(), val2.size());
           string newvalstr;
           newvalstr += val1str;
-          newvalstr += (!val1str.empty() && !val2str.empty()) ? delimiter : "";
+          newvalstr += (!val1str.empty() && !val2str.empty()) ? separator : "";
           newvalstr += val2str;
           lmdb::val newval(newvalstr);
 
